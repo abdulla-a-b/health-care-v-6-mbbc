@@ -1,1 +1,2182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workplace Health Research — Patient Registry &amp; Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal-900:#042c2e; --teal-700:#0a5157; --teal-500:#0e7a82;
+    --teal-300:#4db6c0; --teal-100:#cef0f2; --teal-50:#edfafb;
+    --amber-700:#7a5c00; --amber-100:#fff3cd; --amber-300:#f0c040;
+    --blue-700:#1a5276;  --blue-50:#eaf2fb;
+    --ink:#1a1c1d; --ink-60:#5c6264; --ink-30:#b3bcbe; --ink-10:#edf0f1;
+    --white:#ffffff; --danger:#c0392b;
+    --border:1px solid #d4dcde; --radius:6px; --shadow:0 2px 8px rgba(4,44,46,0.08);
+  }
+  body { font-family:'DM Sans',sans-serif; background:#f0f4f5; color:var(--ink); min-height:100vh; padding:0 0 4rem; }
 
+  /* ── Header ── */
+  header { background:var(--teal-900); padding:2rem 2rem 1.75rem; text-align:center; position:relative; overflow:hidden; }
+  header::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.03) 39px,rgba(255,255,255,0.03) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.03) 39px,rgba(255,255,255,0.03) 40px); }
+  .header-inner { position:relative; z-index:1; }
+  .header-badge { display:inline-block; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal-300); background:rgba(77,182,192,0.12); border:1px solid rgba(77,182,192,0.25); padding:5px 14px; border-radius:2px; margin-bottom:0.75rem; }
+  header h1 { font-family:'Fraunces',serif; font-size:clamp(1.4rem,3.5vw,2rem); font-weight:300; color:var(--white); letter-spacing:-0.01em; line-height:1.25; margin-bottom:0.35rem; }
+  header h1 span { color:var(--teal-300); }
+  header p { font-size:0.85rem; color:rgba(255,255,255,0.5); max-width:480px; margin:0 auto; }
+
+  /* ── Role indicator strip ── */
+  .role-strip { display:none; background:var(--teal-700); padding:7px 1.5rem; text-align:center; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-100); }
+  .role-strip.visible { display:block; }
+  .role-strip .role-tag { background:rgba(255,255,255,0.15); border-radius:3px; padding:2px 10px; margin-left:6px; }
+
+  /* ── Container ── */
+  .container { max-width:820px; margin:0 auto; padding:2rem 1.25rem 0; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { display:flex; gap:6px; margin-bottom:2rem; }
+  .progress-step { flex:1; height:3px; background:var(--ink-10); border-radius:2px; transition:background 0.3s; }
+  .progress-step.done { background:var(--teal-500); }
+  .progress-step.active { background:var(--teal-300); }
+
+  /* ── Section cards ── */
+  .section { background:var(--white); border:var(--border); border-radius:var(--radius); margin-bottom:1.25rem; overflow:hidden; box-shadow:var(--shadow); }
+  .section-header { display:flex; align-items:center; gap:12px; padding:1rem 1.5rem; border-bottom:var(--border); background:var(--teal-50); }
+  .section-num { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; color:var(--teal-700); background:var(--teal-100); border:1px solid var(--teal-300); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .section-header h2 { font-family:'DM Mono',monospace; font-size:0.75rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-700); }
+  .section-body { padding:1.5rem; }
+
+  /* ── Grids ── */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
+  .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:1.25rem; }
+  @media(max-width:580px) { .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; } }
+
+  /* ── Fields ── */
+  .field { display:flex; flex-direction:column; gap:6px; }
+  label { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-60); }
+  label .req { color:var(--danger); margin-left:2px; }
+  label .unit { font-weight:400; color:var(--ink-30); letter-spacing:0; text-transform:none; font-family:'DM Sans',sans-serif; font-size:11px; }
+  input[type="text"],input[type="number"],input[type="time"],input[type="date"],input[type="tel"],select,textarea { font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--ink); background:var(--white); border:1px solid var(--ink-30); border-radius:var(--radius); padding:0.55rem 0.75rem; width:100%; transition:border-color 0.15s,box-shadow 0.15s; outline:none; appearance:none; -webkit-appearance:none; }
+  input:focus,select:focus,textarea:focus { border-color:var(--teal-500); box-shadow:0 0 0 3px rgba(14,122,130,0.12); }
+  select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c6264' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.2rem; cursor:pointer; }
+  textarea { resize:vertical; min-height:90px; line-height:1.6; }
+  input[type="number"] { -moz-appearance:textfield; }
+  input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+  /* ── Checkboxes / radios ── */
+  .check-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .check-item { display:flex; align-items:center; gap:8px; background:var(--ink-10); border:1px solid transparent; border-radius:var(--radius); padding:8px 10px; cursor:pointer; transition:border-color 0.15s,background 0.15s; user-select:none; }
+  .check-item:hover { border-color:var(--teal-300); background:var(--teal-50); }
+  .check-item input[type="checkbox"] { width:15px; height:15px; accent-color:var(--teal-500); cursor:pointer; flex-shrink:0; }
+  .check-item span { font-size:0.82rem; color:var(--ink-60); }
+  .radio-group { display:flex; flex-wrap:wrap; gap:8px; }
+  .radio-pill { display:flex; align-items:center; gap:7px; background:var(--ink-10); border:1px solid transparent; border-radius:100px; padding:7px 14px; cursor:pointer; transition:border-color 0.15s,background 0.15s; user-select:none; }
+  .radio-pill:hover { border-color:var(--teal-300); background:var(--teal-50); }
+  .radio-pill input[type="radio"] { accent-color:var(--teal-500); cursor:pointer; }
+  .radio-pill:has(input:checked) { background:var(--teal-100); border-color:var(--teal-500); }
+  .radio-pill:has(input:checked) span { color:var(--teal-700); font-weight:500; }
+  .radio-pill span { font-size:0.85rem; color:var(--ink-60); }
+
+  /* ── BP ── */
+  .bp-group { display:flex; align-items:center; gap:8px; }
+  .bp-sep { font-size:1.2rem; color:var(--ink-30); font-weight:300; flex-shrink:0; }
+  .divider { border:none; border-top:1px dashed var(--ink-10); margin:1.25rem 0; }
+
+  /* ════════════════════════════════════════
+     ROLE SELECTOR SCREEN
+  ════════════════════════════════════════ */
+  #roleScreen { animation:fadeIn 0.3s ease; }
+  #roleScreen h2 { font-family:'Fraunces',serif; font-size:1.3rem; font-weight:300; color:var(--teal-900); text-align:center; margin-bottom:0.4rem; }
+  #roleScreen p { font-size:0.85rem; color:var(--ink-60); text-align:center; margin-bottom:2rem; }
+  .role-cards { display:grid; grid-template-columns:repeat(5,1fr); gap:1.25rem; }
+  @media(max-width:1100px) { .role-cards { grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px) { .role-cards { grid-template-columns:1fr; } }
+  .role-card { background:var(--white); border:2px solid var(--border); border-radius:10px; padding:2rem 1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s, box-shadow 0.2s, transform 0.1s; box-shadow:var(--shadow); }
+  .role-card:hover { border-color:var(--teal-300); box-shadow:0 4px 16px rgba(4,44,46,0.12); transform:translateY(-2px); }
+  .role-card:active { transform:scale(0.98); }
+  .role-card.assistant { border-color:transparent; }
+  .role-card.doctor { border-color:transparent; }
+  .role-icon { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
+  .role-card.assistant .role-icon { background:#e8f5e9; }
+  .role-card.doctor .role-icon { background:var(--teal-50); }
+  .role-card h3 { font-family:'DM Mono',monospace; font-size:0.85rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-900); margin-bottom:0.4rem; }
+  .role-card p { font-size:0.82rem; color:var(--ink-60); line-height:1.5; margin-bottom:1rem; }
+  .role-card .role-scope { font-family:'DM Mono',monospace; font-size:10px; color:var(--teal-500); background:var(--teal-50); border:1px solid var(--teal-100); border-radius:3px; padding:4px 10px; display:inline-block; }
+  .role-card.assistant .role-scope { background:#e8f5e9; border-color:#c8e6c9; color:#2e7d32; }
+
+  /* ════════════════════════════════════════
+     ASSISTANT SUCCESS / RECORD ID CARD
+  ════════════════════════════════════════ */
+  #assistantSuccessScreen { display:none; animation:fadeIn 0.4s ease; }
+  .success-card { background:var(--white); border:2px solid var(--teal-300); border-radius:12px; padding:2.5rem 2rem; text-align:center; box-shadow:var(--shadow); }
+  .success-icon-wrap { width:60px; height:60px; background:var(--teal-100); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
+  .success-card h2 { font-family:'Fraunces',serif; font-size:1.4rem; font-weight:300; color:var(--teal-900); margin-bottom:0.4rem; }
+  .success-card .sub { font-size:0.85rem; color:var(--ink-60); margin-bottom:1.75rem; }
+  .record-id-box { background:var(--teal-900); border-radius:8px; padding:1.25rem 2rem; display:inline-block; margin-bottom:1.75rem; min-width:280px; }
+  .record-id-box .rid-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--teal-300); margin-bottom:6px; }
+  .record-id-box .rid-value { font-family:'DM Mono',monospace; font-size:1.6rem; font-weight:500; color:var(--white); letter-spacing:0.05em; }
+  .handover-instruction { background:var(--amber-100); border:1px solid var(--amber-300); border-radius:var(--radius); padding:1rem 1.25rem; text-align:left; margin-bottom:1.5rem; }
+  .handover-instruction p { font-size:0.83rem; color:var(--amber-700); line-height:1.6; }
+  .handover-instruction strong { font-weight:500; }
+
+  /* ════════════════════════════════════════
+     DOCTOR ENTRY SCREEN (enter Record ID)
+  ════════════════════════════════════════ */
+  #doctorEntryScreen { display:none; animation:fadeIn 0.4s ease; }
+  .doctor-entry-card { background:var(--white); border:var(--border); border-radius:12px; padding:2.5rem 2rem; box-shadow:var(--shadow); }
+  .doctor-entry-card h2 { font-family:'Fraunces',serif; font-size:1.3rem; font-weight:300; color:var(--teal-900); margin-bottom:0.35rem; }
+  .doctor-entry-card .sub { font-size:0.85rem; color:var(--ink-60); margin-bottom:2rem; }
+  .rid-input-wrap { display:flex; gap:10px; align-items:flex-end; }
+  .rid-input-wrap input { font-family:'DM Mono',monospace; font-size:1.1rem; letter-spacing:0.08em; text-transform:uppercase; flex:1; }
+  .btn-load { font-family:'DM Mono',monospace; font-size:0.78rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--white); background:var(--teal-700); border:none; border-radius:var(--radius); padding:0.72rem 1.5rem; cursor:pointer; white-space:nowrap; transition:background 0.2s; }
+  .btn-load:hover { background:var(--teal-900); }
+  .or-divider { display:flex; align-items:center; gap:12px; margin:1.5rem 0; }
+  .or-divider hr { flex:1; border:none; border-top:1px solid var(--ink-10); }
+  .or-divider span { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-30); letter-spacing:0.1em; text-transform:uppercase; }
+
+  /* ── Patient summary (read-only, shown to doctor) ── */
+  #patientSummary { display:none; background:var(--teal-50); border:1px solid var(--teal-100); border-radius:var(--radius); padding:1.25rem 1.5rem; margin-bottom:1.5rem; animation:fadeIn 0.3s ease; }
+  #patientSummary h3 { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal-700); margin-bottom:0.85rem; }
+  .summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px 16px; }
+  .summary-item .s-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-500); }
+  .summary-item .s-value { font-size:0.88rem; font-weight:500; color:var(--teal-900); margin-top:1px; }
+
+  /* ── Info bar ── */
+  .info-bar { border-radius:var(--radius); padding:0.85rem 1.25rem; margin-bottom:1.5rem; display:flex; align-items:flex-start; gap:10px; }
+  .info-bar.yellow { background:#fffbe6; border:1px solid #f0d060; }
+  .info-bar.blue   { background:var(--blue-50); border:1px solid #aed6f1; }
+  .info-bar p { font-size:0.82rem; line-height:1.5; }
+  .info-bar.yellow p { color:var(--amber-700); }
+  .info-bar.blue   p { color:#1a5276; }
+
+
+  /* ── Pending Queue ── */
+  .queue-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem; }
+  .queue-title { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-700); display:flex; align-items:center; gap:8px; }
+  .queue-badge { background:var(--teal-500); color:var(--white); font-size:10px; font-weight:700; border-radius:100px; padding:1px 8px; font-family:'DM Mono',monospace; }
+  .queue-clear { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-30); background:none; border:none; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase; padding:0; }
+  .queue-clear:hover { color:var(--danger); }
+  .queue-list { display:flex; flex-direction:column; gap:8px; margin-bottom:1.25rem; }
+  .queue-item { background:var(--white); border:1px solid var(--teal-100); border-radius:var(--radius); padding:0.85rem 1rem; display:flex; align-items:center; gap:12px; transition:border-color 0.15s,box-shadow 0.15s; }
+  .queue-item:hover { border-color:var(--teal-300); box-shadow:0 2px 8px rgba(14,122,130,0.1); }
+  .queue-item .q-num { font-family:'DM Mono',monospace; font-size:11px; font-weight:700; color:var(--white); background:var(--teal-500); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .queue-item .q-info { flex:1; min-width:0; }
+  .queue-item .q-name { font-size:0.9rem; font-weight:500; color:var(--teal-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .queue-item .q-meta { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-30); margin-top:2px; letter-spacing:0.04em; }
+  .queue-item .q-rid { font-family:'DM Mono',monospace; font-size:10px; color:var(--teal-500); background:var(--teal-50); border-radius:3px; padding:2px 7px; flex-shrink:0; }
+  .queue-item .q-btn { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--white); background:var(--teal-700); border:none; border-radius:4px; padding:5px 14px; cursor:pointer; flex-shrink:0; transition:background 0.15s; }
+  .queue-item .q-btn:hover { background:var(--teal-900); }
+  .queue-empty { text-align:center; padding:1.5rem; background:var(--ink-10); border-radius:var(--radius); }
+  .queue-empty p { font-size:0.83rem; color:var(--ink-30); font-family:'DM Mono',monospace; letter-spacing:0.04em; }
+
+  /* ── Prescriptions Screen ── */
+  .presc-screen-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
+  .presc-screen-title  { font-family:'Fraunces',serif; font-size:1.2rem; font-weight:300; color:var(--teal-900); }
+  .presc-screen-sub    { font-size:0.82rem; color:var(--ink-60); margin-top:2px; }
+  .presc-badge-count   { background:var(--blue-700); color:var(--white); font-size:10px; font-weight:700; border-radius:100px; padding:2px 9px; font-family:'DM Mono',monospace; margin-left:8px; }
+  .presc-list          { display:flex; flex-direction:column; gap:10px; }
+  .presc-card          { background:var(--white); border:var(--border); border-radius:var(--radius); padding:1rem 1.25rem; box-shadow:var(--shadow); display:flex; align-items:center; gap:14px; transition:box-shadow 0.15s; }
+  .presc-card:hover    { box-shadow:0 4px 14px rgba(4,44,46,0.1); }
+  .presc-card .pc-avatar { width:42px; height:42px; background:var(--teal-100); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:'DM Mono',monospace; font-size:13px; font-weight:700; color:var(--teal-700); }
+  .presc-card .pc-info   { flex:1; min-width:0; }
+  .presc-card .pc-name   { font-size:0.95rem; font-weight:500; color:var(--teal-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .presc-card .pc-meta   { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-30); margin-top:3px; letter-spacing:0.03em; }
+  .presc-card .pc-diagnosis { font-size:0.8rem; color:var(--ink-60); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .presc-card .pc-rid    { font-family:'DM Mono',monospace; font-size:9px; color:var(--teal-500); background:var(--teal-50); border:1px solid var(--teal-100); border-radius:3px; padding:3px 8px; flex-shrink:0; display:none; }
+  @media(min-width:540px){ .presc-card .pc-rid { display:block; } }
+  .presc-card .pc-actions { display:flex; gap:8px; flex-shrink:0; }
+  .btn-print { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--white); background:var(--blue-700); border:none; border-radius:4px; padding:7px 14px; cursor:pointer; transition:background 0.15s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-print:hover   { background:#154360; }
+  .btn-del   { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--danger); background:transparent; border:1px solid #f5c6c6; border-radius:4px; padding:7px 10px; cursor:pointer; transition:background 0.15s; }
+  .btn-del:hover     { background:#fdf0f0; }
+  .presc-empty       { text-align:center; padding:3rem 1rem; }
+  .presc-empty svg   { opacity:0.25; margin-bottom:0.75rem; }
+  .presc-empty p     { font-size:0.85rem; color:var(--ink-30); font-family:'DM Mono',monospace; letter-spacing:0.04em; }
+  .presc-toolbar     { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+  .btn-back          { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-600); background:transparent; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px; padding:0; color:var(--teal-500); }
+  .btn-back:hover    { color:var(--teal-700); }
+  .btn-clear-presc   { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-30); background:none; border:none; cursor:pointer; letter-spacing:0.06em; text-transform:uppercase; }
+  .btn-clear-presc:hover { color:var(--danger); }
+
+
+  /* ── Leave Calendar Box ── */
+  .leave-calendar-box {
+    background: #f0fafb;
+    border: 1.5px solid var(--teal-100);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem 1rem;
+  }
+  .leave-calendar-header {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal-700);
+    margin-bottom: 1rem;
+  }
+  .leave-calendar-fields {
+    display: grid; grid-template-columns: 1fr 32px 1fr 96px; gap: 12px; align-items: end;
+  }
+  @media (max-width: 580px) {
+    .leave-calendar-fields { grid-template-columns: 1fr 1fr; }
+    .leave-calendar-arrow  { display: none; }
+  }
+  .leave-calendar-arrow { display: flex; align-items: center; justify-content: center; padding-bottom: 8px; }
+  .leave-days-display {
+    background: var(--teal-700); border-radius: var(--radius);
+    padding: 0.5rem 0.75rem; text-align: center; min-height: 38px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .leave-days-num   { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 500; color: var(--white); line-height: 1; }
+  .leave-days-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--teal-300); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  /* ── Submit / buttons ── */
+  /* ── Dashboard Screen ── */
+  #dashboardScreen { display:none; animation:fadeIn 0.3s ease; }
+  .dash-toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:10px; }
+  .dash-title { font-family:'Fraunces',serif; font-size:1.15rem; font-weight:300; color:var(--teal-900); }
+  .dash-sub { font-size:0.78rem; color:var(--ink-30); font-family:'DM Mono',monospace; margin-top:2px; }
+  .dash-period-tabs { display:flex; background:var(--ink-10); border-radius:6px; padding:3px; gap:2px; }
+  .dash-period-tab { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-60); background:transparent; border:none; border-radius:4px; padding:5px 12px; cursor:pointer; transition:all 0.2s; }
+  .dash-period-tab.active { background:var(--teal-500); color:var(--white); }
+  .dash-period-tab:hover:not(.active) { background:var(--teal-50); color:var(--teal-700); }
+  .dash-daterange-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 12px; background:var(--teal-50); border:1px solid var(--teal-100); border-radius:var(--radius); margin-top:8px; animation:fadeIn 0.2s ease; }
+  .dash-daterange-row label { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-700); white-space:nowrap; }
+  .dash-daterange-row input[type="date"] { font-family:'DM Mono',monospace; font-size:11px; color:var(--ink); background:var(--white); border:1px solid var(--ink-30); border-radius:4px; padding:5px 8px; outline:none; transition:border-color 0.15s; }
+  .dash-daterange-row input[type="date"]:focus { border-color:var(--teal-500); }
+  .dash-date-sep { font-size:11px; color:var(--ink-30); }
+  .btn-apply-range { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--white); background:var(--teal-500); border:none; border-radius:4px; padding:5px 14px; cursor:pointer; transition:background 0.15s; white-space:nowrap; }
+  .btn-apply-range:hover { background:var(--teal-700); }
+  .dash-range-active-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--teal-700); background:var(--teal-100); border-radius:3px; padding:3px 10px; white-space:nowrap; }
+  .btn-dash-refresh { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-700); background:var(--teal-50); border:1px solid var(--teal-100); border-radius:var(--radius); padding:6px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background 0.2s; }
+  .btn-dash-refresh:hover { background:var(--teal-100); }
+  .btn-dash-refresh:disabled { opacity:0.4; cursor:not-allowed; }
+  .dash-loading { text-align:center; padding:3rem 1rem; }
+  .dash-loading .spin-ring { width:40px; height:40px; border:3px solid var(--teal-100); border-top-color:var(--teal-500); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 1rem; }
+  .dash-kpi-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:14px; margin-bottom:1.75rem; }
+  .dash-kpi { background:var(--white); border:var(--border); border-radius:var(--radius); padding:1.1rem 1.25rem; box-shadow:var(--shadow); border-left:4px solid var(--teal-300); }
+  .dash-kpi.d { border-left-color:#dc2626; }
+  .dash-kpi.w { border-left-color:#f59e0b; }
+  .dash-kpi.g { border-left-color:#16a34a; }
+  .dash-kpi.i { border-left-color:#1d4ed8; }
+  .dash-kpi-label { font-family:'DM Mono',monospace; font-size:9.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30); margin-bottom:6px; }
+  .dash-kpi-val { font-family:'Fraunces',serif; font-size:2rem; font-weight:300; color:var(--teal-900); line-height:1; }
+  .dash-kpi-sub { font-size:0.75rem; color:var(--ink-60); margin-top:3px; }
+  .dash-section-head { display:flex; align-items:center; gap:8px; margin:2rem 0 1rem; font-family:'DM Mono',monospace; font-size:10.5px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal-700); }
+  .dash-section-head::before { content:''; width:12px; height:2px; background:var(--teal-300); display:inline-block; flex-shrink:0; }
+  .dash-charts-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .dash-charts-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+  .dash-charts-1 { display:grid; grid-template-columns:1fr; margin-bottom:16px; }
+  @media(max-width:680px) { .dash-charts-2,.dash-charts-3 { grid-template-columns:1fr; } }
+  .dash-chart-card { background:var(--white); border:var(--border); border-radius:var(--radius); padding:1.25rem; box-shadow:var(--shadow); }
+  .dash-chart-title { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-700); margin-bottom:1rem; }
+  .dash-chart-wrap { position:relative; }
+  .h260 { height:260px; } .h220 { height:220px; } .h300 { height:300px; }
+  .dash-rank-list { list-style:none; }
+  .dash-rank-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:0.5px solid var(--ink-10); }
+  .dash-rank-item:last-child { border-bottom:none; }
+  .dash-rank-n { font-family:'DM Mono',monospace; font-size:10px; font-weight:700; color:var(--teal-300); min-width:18px; }
+  .dash-rank-label { flex:1; font-size:0.84rem; color:var(--ink); }
+  .dash-rank-bar-wrap { flex:1; background:var(--ink-10); border-radius:3px; height:7px; overflow:hidden; }
+  .dash-rank-bar { height:100%; border-radius:3px; background:var(--teal-500); transition:width 0.8s ease; }
+  .dash-rank-count { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-60); min-width:28px; text-align:right; }
+  .dash-insight { background:var(--teal-900); border-radius:var(--radius); padding:1rem 1.25rem; margin:1.25rem 0; display:flex; align-items:flex-start; gap:12px; }
+  .dash-insight p { font-size:0.82rem; color:rgba(255,255,255,0.75); line-height:1.6; }
+  .dash-insight p strong { color:var(--teal-300); }
+  .dash-action-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .dash-action { border-radius:var(--radius); padding:1.1rem; border-left:4px solid; }
+  .dash-action.cr { background:#fef2f2; border-color:#dc2626; }
+  .dash-action.wa { background:#fffbeb; border-color:#f59e0b; }
+  .dash-action.go { background:#f0fdf4; border-color:#16a34a; }
+  .dash-action.in { background:#eff6ff; border-color:#1d4ed8; }
+  .dash-action-pri { font-family:'DM Mono',monospace; font-size:8.5px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:6px; }
+  .dash-action.cr .dash-action-pri { color:#dc2626; }
+  .dash-action.wa .dash-action-pri { color:#b45309; }
+  .dash-action.go .dash-action-pri { color:#16a34a; }
+  .dash-action.in .dash-action-pri { color:#1d4ed8; }
+  .dash-action h4 { font-size:0.87rem; font-weight:500; color:var(--ink); margin-bottom:5px; }
+  .dash-action p  { font-size:0.78rem; color:var(--ink-60); line-height:1.5; }
+  .dash-action-metric { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; margin-top:7px; }
+  .dash-action.cr .dash-action-metric { color:#dc2626; }
+  .dash-action.wa .dash-action-metric { color:#b45309; }
+  .dash-action.go .dash-action-metric { color:#16a34a; }
+  .dash-action.in .dash-action-metric { color:#1d4ed8; }
+  .dash-no-data { text-align:center; padding:2.5rem 1rem; font-family:'DM Mono',monospace; font-size:11px; color:var(--ink-30); letter-spacing:0.06em; }
+
+  /* ── Patient Portal ── */
+  #patientPortalScreen { display:none; animation:fadeIn 0.3s ease; }
+  .portal-search-card { background:var(--white); border:var(--border); border-radius:var(--radius); padding:2rem 1.75rem; box-shadow:var(--shadow); margin-bottom:1.5rem; }
+  .portal-search-card h2 { font-family:'Fraunces',serif; font-size:1.25rem; font-weight:300; color:var(--teal-900); margin-bottom:0.3rem; }
+  .portal-search-card .sub { font-size:0.83rem; color:var(--ink-60); margin-bottom:1.5rem; }
+  .portal-input-row { display:flex; gap:10px; align-items:flex-end; }
+  .portal-input-row input { font-family:'DM Mono',monospace; font-size:1rem; letter-spacing:0.04em; flex:1; }
+  .btn-portal-search { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--white); background:var(--teal-700); border:none; border-radius:var(--radius); padding:0.72rem 1.5rem; cursor:pointer; white-space:nowrap; transition:background 0.2s; display:inline-flex; align-items:center; gap:7px; }
+  .btn-portal-search:hover { background:var(--teal-900); }
+  .btn-portal-search:disabled { background:var(--ink-30); cursor:not-allowed; }
+  .portal-error { display:none; margin-top:10px; font-family:'DM Mono',monospace; font-size:11px; color:var(--danger); }
+  .portal-results { display:none; animation:fadeIn 0.3s ease; }
+  .portal-patient-banner { background:var(--teal-900); border-radius:var(--radius); padding:1.25rem 1.5rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:14px; }
+  .portal-avatar { width:48px; height:48px; background:var(--teal-700); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'DM Mono',monospace; font-size:15px; font-weight:700; color:var(--teal-300); flex-shrink:0; }
+  .portal-patient-info h3 { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:300; color:var(--white); margin-bottom:2px; }
+  .portal-patient-info p { font-size:0.8rem; color:rgba(255,255,255,0.5); font-family:'DM Mono',monospace; }
+  .portal-visit-count { margin-left:auto; text-align:right; flex-shrink:0; }
+  .portal-visit-count .vc-num { font-family:'Fraunces',serif; font-size:1.8rem; font-weight:300; color:var(--teal-300); line-height:1; }
+  .portal-visit-count .vc-label { font-family:'DM Mono',monospace; font-size:9px; color:rgba(255,255,255,0.4); letter-spacing:0.1em; text-transform:uppercase; }
+  .portal-visits-list { display:flex; flex-direction:column; gap:14px; }
+  .portal-visit-card { background:var(--white); border:var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+  .portal-visit-header { background:var(--teal-50); border-bottom:var(--border); padding:0.85rem 1.25rem; display:flex; align-items:center; gap:12px; }
+  .portal-visit-num { font-family:'DM Mono',monospace; font-size:10px; font-weight:700; color:var(--white); background:var(--teal-500); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .portal-visit-date { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; color:var(--teal-700); }
+  .portal-visit-doc { font-size:0.8rem; color:var(--ink-60); margin-left:auto; }
+  .portal-sev-badge { font-family:'DM Mono',monospace; font-size:9px; font-weight:700; border-radius:3px; padding:2px 8px; letter-spacing:0.06em; text-transform:uppercase; }
+  .sev-critical { background:#fef2f2; color:#dc2626; }
+  .sev-severe   { background:#fff7ed; color:#c2410c; }
+  .sev-moderate { background:#fffbeb; color:#b45309; }
+  .sev-mild     { background:#f0fdf4; color:#16a34a; }
+  .portal-visit-body { padding:1.25rem; }
+  .portal-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 20px; margin-bottom:1rem; }
+  @media(max-width:560px){ .portal-detail-grid { grid-template-columns:1fr; } }
+  .portal-detail-item .pd-label { font-family:'DM Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-30); margin-bottom:3px; }
+  .portal-detail-item .pd-val { font-size:0.87rem; color:var(--ink); line-height:1.5; }
+  .portal-detail-item.full { grid-column:1/-1; }
+  .portal-rx-box { background:var(--teal-50); border:1px solid var(--teal-100); border-radius:var(--radius); padding:1rem 1.25rem; margin-top:1rem; }
+  .portal-rx-title { font-family:'DM Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-700); margin-bottom:0.75rem; display:flex; align-items:center; gap:7px; }
+  .portal-rx-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 20px; }
+  @media(max-width:560px){ .portal-rx-grid { grid-template-columns:1fr; } }
+  .portal-leave-pill { display:inline-flex; align-items:center; gap:8px; background:#fff3cd; border:1px solid #f0c040; border-radius:var(--radius); padding:6px 14px; margin-top:10px; font-size:0.82rem; color:#7a5c00; }
+  .portal-leave-pill strong { font-family:'DM Mono',monospace; font-size:1rem; color:#7a5c00; }
+  .btn-print-rx { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--white); background:var(--blue-700); border:none; border-radius:4px; padding:6px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; margin-top:12px; transition:background 0.15s; }
+  .btn-print-rx:hover { background:#154360; }
+
+  .submit-wrap { margin-top:2rem; text-align:center; }
+  button[type="submit"] { font-family:'DM Mono',monospace; font-size:0.8rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--white); background:var(--teal-700); border:none; border-radius:var(--radius); padding:0.9rem 3.5rem; cursor:pointer; transition:background 0.2s,transform 0.1s; }
+  button[type="submit"]:hover { background:var(--teal-900); }
+  button[type="submit"]:active { transform:scale(0.98); }
+  button[type="submit"]:disabled { background:var(--ink-30); cursor:not-allowed; transform:none; }
+  .submit-note { font-size:0.78rem; color:var(--ink-30); margin-top:0.75rem; font-family:'DM Mono',monospace; }
+
+  /* ── PDF panel ── */
+  #pdfPanel { display:none; margin-top:1.75rem; background:var(--white); border:2px solid var(--teal-300); border-radius:10px; padding:2rem 1.5rem; animation:panelIn 0.4s ease; }
+  @keyframes panelIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  .pdf-panel-icon { width:54px; height:54px; background:var(--teal-100); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; }
+  #pdfPanel h3 { font-family:'Fraunces',serif; font-size:1.25rem; font-weight:300; color:var(--teal-900); margin-bottom:0.4rem; }
+  #pdfPanel p  { font-size:0.85rem; color:var(--ink-60); margin-bottom:1.5rem; }
+  .btn-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .btn-pdf { font-family:'DM Mono',monospace; font-size:0.78rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--white); background:var(--blue-700); border:none; border-radius:var(--radius); padding:0.8rem 2rem; cursor:pointer; transition:background 0.2s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-pdf:hover { background:#154360; }
+  .btn-new { font-family:'DM Mono',monospace; font-size:0.78rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal-700); background:transparent; border:1px solid var(--teal-300); border-radius:var(--radius); padding:0.8rem 1.75rem; cursor:pointer; transition:background 0.2s; }
+  .btn-new:hover { background:var(--teal-50); }
+
+  /* ── Toast / Spinner ── */
+  .toast { display:none; position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); padding:1rem 2rem; border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:0.8rem; letter-spacing:0.05em; z-index:999; max-width:90vw; text-align:center; animation:fadeup 0.3s ease; }
+  .toast.success { background:var(--teal-900); color:var(--teal-100); }
+  .toast.error   { background:#4a1212; color:#f5b8b8; }
+  @keyframes fadeup { from{opacity:0;transform:translateX(-50%) translateY(12px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:var(--white); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:8px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── Hidden print receipt ── */
+  #printReceipt { display:none; }
+
+  /* ════════════════════════════════════════
+     PRINT STYLES
+  ════════════════════════════════════════ */
+  @media print {
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    body{background:white;padding:0;margin:0;font-family:Arial,sans-serif;font-size:11px}
+    header,.container,.role-strip{display:none!important}
+    .toast,#pdfPanel{display:none!important}
+    #printReceipt{display:block!important}
+    @page{size:A4;margin:12mm 14mm}
+    .pr-page{width:100%;font-size:10.5px;color:#1a1c1d}
+    .pr-confidential{font-size:8px;color:#b3bcbe;text-align:right;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px}
+    .pr-header{background:#042c2e!important;color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+    .pr-header-left h1{font-size:14px;font-weight:700;color:white;margin-bottom:2px}
+    .pr-header-left p{font-size:8.5px;color:#4db6c0;letter-spacing:0.1em;text-transform:uppercase}
+    .pr-header-right{text-align:right;font-size:8.5px;color:rgba(255,255,255,0.65);line-height:1.8}
+    .pr-header-right strong{color:white;font-size:10px}
+    .pr-refbar{background:#0a5157!important;color:#cef0f2;padding:5px 18px;font-size:8.5px;letter-spacing:0.1em;text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:12px}
+    .pr-section-label{font-size:7.5px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#0a5157;border-bottom:1.5px solid #4db6c0;padding-bottom:3px;margin:12px 0 7px}
+    .pr-grid{display:grid;gap:5px 14px;margin-bottom:3px}
+    .pr-grid-2{grid-template-columns:1fr 1fr}
+    .pr-grid-3{grid-template-columns:1fr 1fr 1fr}
+    .pr-grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+    .pr-field{display:flex;flex-direction:column;gap:2px}
+    .pr-field .lbl{font-size:7px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#5c6264}
+    .pr-field .val{font-size:10.5px;color:#1a1c1d;font-weight:500;border-bottom:0.5px solid #d4dcde;padding-bottom:2px;min-height:15px}
+    .pr-field .val.long{font-size:9.5px;line-height:1.5;white-space:pre-wrap;min-height:28px}
+    .sev-mild{color:#1d6b44!important}
+    .sev-moderate{color:#7a6000!important}
+    .sev-severe{color:#7d3c00!important}
+    .sev-critical{color:#b71c1c!important;font-weight:700!important}
+    .pr-leave-box{background:#fff3cd!important;border:1px solid #f0c040;border-radius:4px;padding:8px 14px;margin:10px 0;display:flex;align-items:center;gap:12px}
+    .pr-leave-box .leave-num{font-size:30px;font-weight:700;color:#7a5c00;line-height:1}
+    .pr-leave-box .leave-text .leave-title{font-size:11px;font-weight:700;color:#7a5c00}
+    .pr-leave-box .leave-text .leave-sub{font-size:8.5px;color:#7a5c00;margin-top:2px}
+    .pr-sig{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:20px;padding-top:8px}
+    .pr-sig-box{border-top:1px solid #1a1c1d;padding-top:4px}
+    .pr-sig-box .sig-name{font-size:10px;font-weight:700;color:#1a1c1d}
+    .pr-sig-box .sig-sub{font-size:8.5px;color:#5c6264;margin-top:2px}
+    .pr-sig-box .sig-line{margin-top:22px;border-top:0.5px solid #888;font-size:7.5px;color:#b3bcbe;padding-top:2px}
+    .pr-footer{margin-top:14px;padding-top:6px;border-top:0.5px solid #d4dcde;font-size:7.5px;color:#b3bcbe;text-align:center;letter-spacing:0.05em}
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     PRINT RECEIPT
+════════════════════════════════════════ -->
+<div id="printReceipt">
+  <div class="pr-page">
+    <div class="pr-confidential">Confidential Medical Record — Not for General Distribution</div>
+    <div class="pr-header">
+      <div class="pr-header-left"><h1>Occupational Illness Registry</h1><p>Workplace Health Research Programme</p></div>
+      <div class="pr-header-right">Ref: <strong id="pr-ref">—</strong><br>Date: <strong id="pr-date">—</strong><br>Time: <strong id="pr-submitted">—</strong></div>
+    </div>
+    <div class="pr-refbar"><span>Patient Medical Record</span><span id="pr-facility-bar">—</span></div>
+
+    <div class="pr-section-label">Attending Professional</div>
+    <div class="pr-grid pr-grid-4">
+      <div class="pr-field"><span class="lbl">Doctor / Staff Name</span><span class="val" id="pr-doctor_name">—</span></div>
+      <div class="pr-field"><span class="lbl">BMDC Reg. No.</span><span class="val" id="pr-bmdc_reg">—</span></div>
+      <div class="pr-field"><span class="lbl">Designation</span><span class="val" id="pr-doctor_role">—</span></div>
+      <div class="pr-field"><span class="lbl">Facility / Factory</span><span class="val" id="pr-facility">—</span></div>
+    </div>
+
+    <div class="pr-section-label">Patient Demographics</div>
+    <div class="pr-grid pr-grid-2" style="margin-bottom:6px">
+      <div class="pr-field"><span class="lbl">Patient Name</span><span class="val" id="pr-patient_name">—</span></div>
+      <div class="pr-field"><span class="lbl">Mobile Number</span><span class="val" id="pr-mobile_number">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-4">
+      <div class="pr-field"><span class="lbl">Age</span><span class="val" id="pr-age">—</span></div>
+      <div class="pr-field"><span class="lbl">Sex</span><span class="val" id="pr-sex">—</span></div>
+      <div class="pr-field"><span class="lbl">Height (cm)</span><span class="val" id="pr-height_cm">—</span></div>
+      <div class="pr-field"><span class="lbl">Weight (kg)</span><span class="val" id="pr-weight_kg">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-4" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Blood Pressure</span><span class="val" id="pr-bp">—</span></div>
+      <div class="pr-field"><span class="lbl">Bed Time</span><span class="val" id="pr-bed_time">—</span></div>
+      <div class="pr-field"><span class="lbl">Wake-up Time</span><span class="val" id="pr-wake_time">—</span></div>
+      <div class="pr-field"><span class="lbl">Sleep Schedule</span><span class="val" id="pr-sleep">—</span></div>
+    </div>
+
+    <div class="pr-section-label">Work Profile</div>
+    <div class="pr-grid pr-grid-4">
+      <div class="pr-field"><span class="lbl">Job Role / Designation</span><span class="val" id="pr-job_designation">—</span></div>
+      <div class="pr-field"><span class="lbl">Total Experience</span><span class="val" id="pr-total_experience">—</span></div>
+      <div class="pr-field"><span class="lbl">Home Distance</span><span class="val" id="pr-home_distance_km">—</span></div>
+      <div class="pr-field"><span class="lbl">Job Nature</span><span class="val" id="pr-job_nature">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-4" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Hrs / Day</span><span class="val" id="pr-hours_per_day">—</span></div>
+      <div class="pr-field"><span class="lbl">Hrs / Week</span><span class="val" id="pr-hours_per_week">—</span></div>
+      <div class="pr-field"><span class="lbl">Years in Current Role</span><span class="val" id="pr-years_in_role">—</span></div>
+      <div class="pr-field"><span class="lbl">Job / Work Area</span><span class="val" id="pr-job_area">—</span></div>
+    </div>
+
+    <div class="pr-section-label">Environmental &amp; Risk Indicators</div>
+    <div class="pr-grid pr-grid-4">
+      <div class="pr-field"><span class="lbl">Chemical / Dust Exposure</span><span class="val" id="pr-chemical_exposure">—</span></div>
+      <div class="pr-field"><span class="lbl">Noise Exposure</span><span class="val" id="pr-noise_exposure">—</span></div>
+      <div class="pr-field"><span class="lbl">Physical Strain</span><span class="val" id="pr-physical_strain">—</span></div>
+      <div class="pr-field"><span class="lbl">Temperature Condition</span><span class="val" id="pr-temperature_condition">—</span></div>
+    </div>
+
+    <div class="pr-section-label">Clinical Presentation</div>
+    <div class="pr-grid pr-grid-2">
+      <div class="pr-field"><span class="lbl">Primary Symptom(s)</span><span class="val long" id="pr-primary_symptoms">—</span></div>
+      <div class="pr-field"><span class="lbl">Secondary Symptom(s)</span><span class="val long" id="pr-secondary_symptoms">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-3" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Duration</span><span class="val" id="pr-duration">—</span></div>
+      <div class="pr-field"><span class="lbl">Severity</span><span class="val" id="pr-severity">—</span></div>
+      <div class="pr-field"><span class="lbl">Type of Illness</span><span class="val" id="pr-illness_type">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-4" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Happened Earlier?</span><span class="val" id="pr-illness_earlier">—</span></div>
+      <div class="pr-field"><span class="lbl">Consultation Taken?</span><span class="val" id="pr-consultation_taken">—</span></div>
+      <div class="pr-field"><span class="lbl">Medication Ongoing?</span><span class="val" id="pr-medication_ongoing">—</span></div>
+      <div class="pr-field"><span class="lbl">Operation History?</span><span class="val" id="pr-operation_history">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-2" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Operation Details</span><span class="val" id="pr-operation_detail">—</span></div>
+      <div class="pr-field"><span class="lbl">Provisional Diagnosis</span><span class="val" id="pr-diagnosis">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-3" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Chronic Disease(s)</span><span class="val long" id="pr-chronic_disease">—</span></div>
+      <div class="pr-field"><span class="lbl">Drinking / Smoking Habit</span><span class="val long" id="pr-habit">—</span></div>
+      <div class="pr-field"><span class="lbl">Family Disease History</span><span class="val long" id="pr-family_history">—</span></div>
+    </div>
+
+    <div class="pr-section-label">Doctor's Assessment</div>
+    <div class="pr-grid pr-grid-2">
+      <div class="pr-field"><span class="lbl">Suggested Diagnostic Tests</span><span class="val long" id="pr-suggested_tests">—</span></div>
+      <div class="pr-field"><span class="lbl">Recommended Medicines</span><span class="val long" id="pr-medicines">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-2" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Food Recommendation</span><span class="val long" id="pr-food_recommendation">—</span></div>
+      <div class="pr-field"><span class="lbl">Exercise Recommendation</span><span class="val long" id="pr-exercise_recommendation">—</span></div>
+    </div>
+    <div class="pr-grid pr-grid-2" style="margin-top:5px">
+      <div class="pr-field"><span class="lbl">Follow-up Recommended</span><span class="val" id="pr-followup">—</span></div>
+      <div class="pr-field"><span class="lbl">Additional Notes</span><span class="val" id="pr-notes">—</span></div>
+    </div>
+
+    <div class="pr-leave-box" id="pr-leave-box" style="display:none">
+      <div class="leave-num" id="pr-leave-num">0</div>
+      <div class="leave-text">
+        <div class="leave-title">Days Recommended Medical Leave</div>
+        <div id="pr-leave-dates" style="font-size:9.5px;color:#7a5c00;margin-top:3px;font-weight:500"></div>
+        <div class="leave-sub">As advised by the attending physician. Present this document to HR / Line Supervisor for leave approval.</div>
+      </div>
+    </div>
+
+    <div class="pr-sig">
+      <div class="pr-sig-box">
+        <div class="sig-name" id="pr-sig-name">Doctor's Name &amp; Signature</div>
+        <div class="sig-sub" id="pr-sig-bmdc"></div>
+        <div class="sig-line">Signature &amp; Stamp</div>
+      </div>
+      <div class="pr-sig-box">
+        <div class="sig-name">Received By — HR / Line Supervisor</div>
+        <div class="sig-sub">Name: _________________________________</div>
+        <div class="sig-line">Signature &amp; Date</div>
+      </div>
+    </div>
+    <div class="pr-footer">Workplace Occupational Health Research Programme &nbsp;·&nbsp; Confidential — Authorised Personnel Only &nbsp;·&nbsp; <span id="pr-footer-date"></span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN UI
+════════════════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <div class="header-badge">Workplace Health Research · Data Entry</div>
+    <h1>Occupational <span>Illness</span> Registry</h1>
+    <p>Two-step workflow · Medical Assistant → Doctor</p>
+  </div>
+</header>
+<div class="role-strip" id="roleStrip"></div>
+
+<div class="container">
+
+  <!-- ── STEP 0: Role Selector ── -->
+  <div id="roleScreen">
+    <div style="text-align:center;margin-bottom:2rem;padding-top:0.5rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:300;color:var(--teal-900);margin-bottom:0.4rem">Who is filling this form?</h2>
+      <p style="font-size:0.85rem;color:var(--ink-60)">Select your role to load the appropriate sections</p>
+    </div>
+    <div class="role-cards">
+      <div class="role-card assistant" onclick="startAssistant()">
+        <div class="role-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Medical Assistant</h3>
+        <p>Fill in patient details, work profile and environmental risk information</p>
+        <span class="role-scope">Sections 1 · 2 · 3</span>
+      </div>
+      <div class="role-card doctor" onclick="startDoctor()">
+        <div class="role-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0013.5 3c-1.04 0-2.03.27-2.88.73M12 20v-5m0 0l-2-2m2 2l2-2" stroke="#0a5157" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="14" r="3" stroke="#0a5157" stroke-width="2"/><path d="M5.5 17H4a2 2 0 00-2 2v1" stroke="#0a5157" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Doctor / Physician</h3>
+        <p>Complete clinical presentation, assessment and attending professional details</p>
+        <span class="role-scope">Sections 4 · 5 · 6</span>
+      </div>
+      <div class="role-card" onclick="startPrescriptions()" style="border-color:transparent">
+        <div class="role-icon" style="background:#eaf2fb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#1a5276" stroke-width="2" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" stroke="#1a5276" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Print Prescriptions</h3>
+        <p>View completed prescriptions queue and print or download PDF for any patient</p>
+        <span class="role-scope" style="background:#eaf2fb;border-color:#aed6f1;color:#1a5276">Print · Download PDF</span>
+      </div>
+      <div class="role-card" onclick="startDashboard()" style="border-color:transparent">
+        <div class="role-icon" style="background:#fef3c7">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="2" y="12" width="4" height="10" rx="1" stroke="#b45309" stroke-width="2"/><rect x="9" y="8" width="4" height="14" rx="1" stroke="#b45309" stroke-width="2"/><rect x="16" y="3" width="4" height="19" rx="1" stroke="#b45309" stroke-width="2"/><path d="M2 7l5-4 5 3 5-4" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Management Dashboard</h3>
+        <p>Illness trends, job area risk analysis, disease breakdown and action plan</p>
+        <span class="role-scope" style="background:#fef3c7;border-color:#fde68a;color:#b45309">Daily · Monthly · Yearly</span>
+      </div>
+      <div class="role-card" onclick="startPatientPortal()" style="border-color:transparent">
+        <div class="role-icon" style="background:#f3e8ff">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#7c3aed" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/><path d="M16 11h4m-2-2v4" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>My Health File</h3>
+        <p>Patients can view their visits, diagnosis, medicines and prescriptions</p>
+        <span class="role-scope" style="background:#f3e8ff;border-color:#ddd6fe;color:#7c3aed">Mobile Number Login</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: Assistant Form ── -->
+  <div id="assistantFormScreen" style="display:none">
+    <div class="progress-wrap">
+      <div class="progress-step active"></div>
+      <div class="progress-step"></div>
+      <div class="progress-step"></div>
+    </div>
+    <div class="info-bar yellow">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:2px"><circle cx="8" cy="8" r="7.25" stroke="#f0d060" stroke-width="1.5"/><path d="M8 4v4l2.5 2" stroke="#f0d060" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <p><strong>Medical Assistant —</strong> Fill sections 1, 2, 3 then submit. A <strong>Record ID</strong> will be generated to hand to the doctor.</p>
+    </div>
+    <form id="assistantForm" autocomplete="off" novalidate>
+
+      <!-- 01. Patient Demographics -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">01</div><h2>Patient Demographics</h2></div>
+        <div class="section-body">
+          <div class="grid-2" style="margin-bottom:1.25rem">
+            <div class="field"><label>Patient Name <span class="req">*</span></label><input type="text" name="patient_name" placeholder="e.g. Md. Rahim Uddin" required></div>
+            <div class="field"><label>Mobile Number <span class="unit">(Serial / Contact)</span></label><input type="tel" name="mobile_number" placeholder="e.g. 01712-345678"></div>
+          </div>
+          <div class="grid-4">
+            <div class="field"><label>Age <span class="req">*</span> <span class="unit">(years)</span></label><input type="number" name="age" min="15" max="80" placeholder="e.g. 34" required></div>
+            <div class="field"><label>Sex <span class="req">*</span></label><select name="sex" required><option value="">— select —</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+            <div class="field"><label>Height <span class="req">*</span> <span class="unit">(cm)</span></label><input type="number" name="height_cm" min="100" max="220" placeholder="e.g. 162" required></div>
+            <div class="field"><label>Weight <span class="req">*</span> <span class="unit">(kg)</span></label><input type="number" name="weight_kg" min="30" max="200" step="0.1" placeholder="e.g. 58.5" required></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-3">
+            <div class="field">
+              <label>Blood Pressure <span class="req">*</span> <span class="unit">(mmHg)</span></label>
+              <div class="bp-group">
+                <input type="number" name="bp_systolic" min="60" max="250" placeholder="120" style="max-width:80px" required>
+                <span class="bp-sep">/</span>
+                <input type="number" name="bp_diastolic" min="40" max="150" placeholder="80" style="max-width:80px" required>
+              </div>
+            </div>
+            <div class="field"><label>Bed Time</label><input type="time" name="bed_time"></div>
+            <div class="field"><label>Wake-up Time</label><input type="time" name="wake_time"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02. Work Profile -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">02</div><h2>Work Profile</h2></div>
+        <div class="section-body">
+          <div class="grid-3">
+            <div class="field"><label>Job Role / Designation <span class="req">*</span></label><input type="text" name="job_designation" placeholder="e.g. Sewing Operator, Line Supervisor" required></div>
+            <div class="field"><label>Total Experience <span class="unit">(years)</span></label><input type="number" name="total_experience" min="0" max="50" step="0.5" placeholder="e.g. 7.5"></div>
+            <div class="field"><label>Home Distance <span class="unit">(km from factory)</span></label><input type="number" name="home_distance_km" min="0" max="200" step="0.1" placeholder="e.g. 4.5"></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-3">
+            <div class="field"><label>Working Hours/Day <span class="req">*</span></label><input type="number" name="hours_per_day" min="1" max="24" placeholder="e.g. 9" required></div>
+            <div class="field"><label>Working Hours/Week <span class="req">*</span></label><input type="number" name="hours_per_week" min="1" max="120" placeholder="e.g. 54" required></div>
+            <div class="field"><label>Years in Current Role</label><input type="number" name="years_in_role" min="0" max="50" step="0.5" placeholder="e.g. 3.5"></div>
+          </div>
+          <hr class="divider">
+          <div class="field" style="margin-bottom:1.25rem">
+            <label>Job Nature <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-pill"><input type="radio" name="job_nature" value="Sitting" required><span>Sitting job</span></label>
+              <label class="radio-pill"><input type="radio" name="job_nature" value="Standing"><span>Standing job</span></label>
+              <label class="radio-pill"><input type="radio" name="job_nature" value="Loading/Physical"><span>Loading / Physical</span></label>
+              <label class="radio-pill"><input type="radio" name="job_nature" value="Mixed"><span>Mixed</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Job / Work Area <span class="req">*</span></label>
+            <div class="check-grid">
+              <label class="check-item"><input type="checkbox" name="job_area" value="Production"><span>Production</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Quality / QC"><span>Quality / QC</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="IE / Industrial Eng."><span>IE / Industrial Eng.</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Cutting"><span>Cutting</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Sewing / Stitching"><span>Sewing / Stitching</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Finishing"><span>Finishing</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Washing"><span>Washing</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Maintenance"><span>Maintenance</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Warehouse / Store"><span>Warehouse / Store</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Admin / HR / Office"><span>Admin / HR / Office</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Other"><span>Other</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03. Environmental & Risk Indicators -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">03</div><h2>Environmental &amp; Risk Indicators</h2></div>
+        <div class="section-body">
+          <div class="grid-4">
+            <div class="field">
+              <label>Exposure to Chemicals / Dust</label>
+              <select name="chemical_exposure"><option value="">— select —</option><option>No</option><option>Yes — Chemical</option><option>Yes — Dust / Fibre</option><option>Yes — Both</option></select>
+            </div>
+            <div class="field">
+              <label>Noise Exposure Level</label>
+              <select name="noise_exposure"><option value="">— select —</option><option>Normal (below 85 dB)</option><option>Above Normal (85–100 dB)</option><option>High (above 100 dB)</option></select>
+            </div>
+            <div class="field">
+              <label>Physical Strain Level</label>
+              <select name="physical_strain"><option value="">— select —</option><option>Low</option><option>Medium</option><option>High</option></select>
+            </div>
+            <div class="field">
+              <label>Temperature Condition</label>
+              <select name="temperature_condition"><option value="">— select —</option><option>Normal</option><option>Cold</option><option>Hot</option><option>Variable / Fluctuating</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-wrap">
+        <button type="submit" id="assistantSubmitBtn">Submit for Doctor Review</button>
+        <p class="submit-note">Sections 1–3 will be saved · Record ID will be generated for the doctor</p>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── STEP 2: Assistant Success / Record ID ── -->
+  <div id="assistantSuccessScreen" style="display:none">
+    <div class="success-card">
+      <div class="success-icon-wrap">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0a5157" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2>Patient Record Submitted</h2>
+      <p class="sub">Sections 1–3 saved to Google Sheets. Hand this Record ID to the doctor.</p>
+      <div class="record-id-box">
+        <div class="rid-label">Patient Record ID</div>
+        <div class="rid-value" id="displayRecordId">—</div>
+      </div>
+      <div class="handover-instruction">
+        <p><strong>Next step:</strong> Give this Record ID to the attending doctor or physician. The doctor will enter this ID on their device to load the patient data and complete the clinical assessment (Sections 4, 5 and 6).</p>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn-pdf" onclick="startDoctor()" style="background:var(--teal-700)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="white" stroke-width="2"/></svg>
+          I am the Doctor — Continue Now
+        </button>
+        <button type="button" class="btn-new" onclick="startNewPatient()">+ New Patient</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Doctor Entry ── -->
+  <div id="doctorEntryScreen" style="display:none">
+    <div class="doctor-entry-card">
+      <h2>Doctor / Physician</h2>
+      <p class="sub">Select a patient from the pending queue, or enter a Record ID manually.</p>
+
+      <!-- Pending Queue -->
+      <div class="queue-header">
+        <div class="queue-title">Pending Patients <span class="queue-badge" id="queueCount">0</span></div>
+        <button class="queue-clear" onclick="clearQueue()">Clear All</button>
+      </div>
+      <div class="queue-list" id="queueList">
+        <div class="queue-empty"><p>No pending patients yet</p></div>
+      </div>
+
+      <div class="or-divider"><hr><span>or enter Record ID manually</span><hr></div>
+      <div class="rid-input-wrap">
+        <div class="field" style="flex:1">
+          <label>Patient Record ID</label>
+          <input type="text" id="doctorRidInput" placeholder="e.g. WHR-20250420-0934-A7F2" style="font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em">
+        </div>
+        <button type="button" class="btn-load" onclick="loadRecord()">Load Patient</button>
+      </div>
+      <div id="ridError" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--danger);font-family:'DM Mono',monospace"></div>
+      <div class="or-divider"><hr><span>or</span><hr></div>
+      <p style="font-size:0.82rem;color:var(--ink-60);text-align:center">Same device as assistant? <a href="#" onclick="continueFromSameSession();return false" style="color:var(--teal-500)">Continue from this session</a>.</p>
+    </div>
+  </div>
+
+  <!-- ── Prescriptions Screen ── -->
+  <div id="prescriptionsScreen" style="display:none">
+    <div class="presc-toolbar">
+      <button class="btn-back" onclick="startNewPatient()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to Home
+      </button>
+      <button class="btn-clear-presc" onclick="clearPrescriptions()">Clear All</button>
+    </div>
+
+    <div class="presc-screen-header">
+      <div>
+        <div class="presc-screen-title">
+          Prescriptions Queue
+          <span class="presc-badge-count" id="prescCount">0</span>
+        </div>
+        <div class="presc-screen-sub">Completed patient records ready to print or download as PDF</div>
+      </div>
+    </div>
+
+    <div class="presc-list" id="prescList">
+      <div class="presc-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#b3bcbe" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8m8 4H8" stroke="#b3bcbe" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <p>No prescriptions yet · Completed records will appear here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Patient Portal Screen ── -->
+  <div id="patientPortalScreen" style="display:none">
+    <div class="dash-toolbar">
+      <div>
+        <div class="dash-title">My Health File</div>
+        <div class="dash-sub">View your medical records, diagnoses and prescriptions</div>
+      </div>
+      <button class="btn-back" onclick="startNewPatient()" style="margin:0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Home
+      </button>
+    </div>
+
+    <!-- Search box -->
+    <div class="portal-search-card">
+      <h2>Enter Your Mobile Number</h2>
+      <p class="sub">Your mobile number is used as your patient ID. Enter the same number registered with the medical assistant.</p>
+      <div class="portal-input-row">
+        <div class="field" style="flex:1">
+          <label>Mobile Number</label>
+          <input type="tel" id="portalMobileInput" placeholder="e.g. 01712-345678" onkeydown="if(event.key==='Enter') portalSearch()">
+        </div>
+        <button class="btn-portal-search" id="portalSearchBtn" onclick="portalSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="white" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          Find My Records
+        </button>
+      </div>
+      <div class="portal-error" id="portalError">No records found for this mobile number. Please check the number and try again.</div>
+    </div>
+
+    <!-- Results area -->
+    <div class="portal-results" id="portalResults"></div>
+  </div>
+
+  <!-- ── Dashboard Screen ── -->
+  <div id="dashboardScreen" style="display:none">
+    <div class="dash-toolbar">
+      <div>
+        <div class="dash-title">Management Analytics Dashboard</div>
+        <div class="dash-sub" id="dashSubLabel">Loading…</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <div class="dash-period-tabs">
+            <button class="dash-period-tab active" id="dpt-daily"   onclick="dashSetPeriod('daily',this)">Daily</button>
+            <button class="dash-period-tab"         id="dpt-weekly"  onclick="dashSetPeriod('weekly',this)">Weekly</button>
+            <button class="dash-period-tab"         id="dpt-monthly" onclick="dashSetPeriod('monthly',this)">Monthly</button>
+            <button class="dash-period-tab"         id="dpt-yearly"  onclick="dashSetPeriod('yearly',this)">Yearly</button>
+            <button class="dash-period-tab"         id="dpt-custom"  onclick="dashSetPeriod('custom',this)">Custom Range</button>
+          </div>
+          <!-- Date range row — shown for weekly and custom -->
+          <div class="dash-daterange-row" id="dashDateRangeRow" style="display:none">
+            <label>From</label>
+            <input type="date" id="dashDateFrom">
+            <span class="dash-date-sep">→</span>
+            <label>To</label>
+            <input type="date" id="dashDateTo">
+            <button class="btn-apply-range" onclick="dashApplyRange()">Apply</button>
+            <span class="dash-range-active-label" id="dashRangeLabel" style="display:none"></span>
+          </div>
+        </div>
+        <button class="btn-dash-refresh" id="dashRefreshBtn" onclick="dashLoad()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Refresh
+        </button>
+        <button class="btn-back" onclick="startNewPatient()" style="margin:0">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Home
+        </button>
+      </div>
+    </div>
+    <div id="dashInner">
+      <div class="dash-loading"><div class="spin-ring"></div><p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-30)">Loading patient data…</p></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Doctor Form ── -->
+  <div id="doctorFormScreen" style="display:none">
+    <div class="progress-wrap">
+      <div class="progress-step done"></div>
+      <div class="progress-step done"></div>
+      <div class="progress-step done"></div>
+      <div class="progress-step active"></div>
+      <div class="progress-step"></div>
+      <div class="progress-step"></div>
+    </div>
+
+    <div class="info-bar blue">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:2px"><circle cx="8" cy="8" r="7.25" stroke="#aed6f1" stroke-width="1.5"/><path d="M8 5v4m0 2v.5" stroke="#aed6f1" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <p><strong>Doctor —</strong> Patient Record <strong id="doctorRidDisplay">—</strong> loaded. Sections 1–3 are read-only. Please complete Sections 4, 5 and 6 then submit the final record.</p>
+    </div>
+
+    <!-- Read-only patient summary -->
+    <div id="patientSummary">
+      <h3>Patient Summary (from Medical Assistant)</h3>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <form id="doctorForm" autocomplete="off" novalidate>
+      <input type="hidden" name="record_id" id="doctorFormRecordId">
+
+      <!-- 04. Clinical Presentation -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">04</div><h2>Clinical Presentation</h2></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><label>Primary Symptom(s) <span class="req">*</span></label><textarea name="primary_symptoms" placeholder="e.g. Persistent lower back pain, radiating to left leg" required></textarea></div>
+            <div class="field"><label>Secondary Symptom(s)</label><textarea name="secondary_symptoms" placeholder="e.g. Numbness in fingers, mild headache in evening"></textarea></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-3">
+            <div class="field"><label>Duration of Illness <span class="req">*</span></label><input type="number" name="duration_days" min="1" placeholder="e.g. 14" required></div>
+            <div class="field"><label>Duration Unit</label><select name="duration_unit"><option value="Days">Days</option><option value="Weeks">Weeks</option><option value="Months">Months</option></select></div>
+            <div class="field"><label>Severity</label><select name="severity"><option value="">— select —</option><option>Mild</option><option>Moderate</option><option>Severe</option><option>Critical</option></select></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-4">
+            <div class="field"><label>Type of Illness</label><select name="illness_type"><option value="">— select —</option><option>Physical Illness</option><option>Mental Health Issues</option><option>Occupational Risk</option><option>Mixed (Physical + Mental)</option><option>Mixed (Physical + Occupational)</option><option>Other</option></select></div>
+            <div class="field"><label>Illness Happened Earlier?</label><select name="illness_earlier"><option value="">— select —</option><option>No</option><option>Yes</option></select></div>
+            <div class="field"><label>Medical Consultation Taken?</label><select name="consultation_taken"><option value="">— select —</option><option>No</option><option>Yes</option></select></div>
+            <div class="field"><label>Medication Going On?</label><select name="medication_ongoing"><option value="">— select —</option><option>No</option><option>Yes</option></select></div>
+          </div>
+          <hr class="divider">
+          <div class="field" style="margin-bottom:1.25rem">
+            <label>Chronic Disease(s) <span class="unit">(select all that apply)</span></label>
+            <div class="check-grid">
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Diabetes"><span>Diabetes</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Hypertension (High BP)"><span>Hypertension (High BP)</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Asthma"><span>Asthma</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Chronic Bronchitis / COPD"><span>Chronic Bronchitis / COPD</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Heart Disease"><span>Heart Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Kidney Disease"><span>Kidney Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Liver Disease"><span>Liver Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Thyroid Disorder"><span>Thyroid Disorder</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Arthritis / Joint Disease"><span>Arthritis / Joint Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Anaemia"><span>Anaemia</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="Depression / Anxiety"><span>Depression / Anxiety</span></label>
+              <label class="check-item"><input type="checkbox" name="chronic_disease" value="None"><span>None</span></label>
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="grid-2" style="margin-bottom:1.25rem">
+            <div class="field"><label>Any Operation History?</label><select name="operation_history" id="operationSelect" onchange="toggleOp(this.value)"><option value="">— select —</option><option>No</option><option>Yes</option></select></div>
+            <div class="field" id="operationDetailWrap" style="display:none"><label>Operation Details <span class="unit">(brief)</span></label><input type="text" name="operation_detail" placeholder="e.g. Appendectomy 2019"></div>
+          </div>
+          <hr class="divider">
+          <div class="field" style="margin-bottom:1.25rem">
+            <label>Drinking / Smoking Habit <span class="unit">(select all that apply)</span></label>
+            <div class="check-grid">
+              <label class="check-item"><input type="checkbox" name="habit" value="Non-smoker"><span>Non-smoker</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Smoker (current)"><span>Smoker (current)</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Ex-smoker"><span>Ex-smoker</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Bidi smoker"><span>Bidi smoker</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Tobacco / Jarda"><span>Tobacco / Jarda</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Alcohol (occasional)"><span>Alcohol (occasional)</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="Alcohol (regular)"><span>Alcohol (regular)</span></label>
+              <label class="check-item"><input type="checkbox" name="habit" value="None"><span>None</span></label>
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="field">
+            <label>Family Disease History <span class="unit">(select all that apply)</span></label>
+            <div class="check-grid">
+              <label class="check-item"><input type="checkbox" name="family_history" value="Diabetes"><span>Diabetes</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Hypertension"><span>Hypertension</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Heart Disease"><span>Heart Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Cancer"><span>Cancer</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Asthma / Respiratory"><span>Asthma / Respiratory</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Kidney Disease"><span>Kidney Disease</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Mental Health Issues"><span>Mental Health Issues</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Thyroid Disorder"><span>Thyroid Disorder</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="Stroke"><span>Stroke</span></label>
+              <label class="check-item"><input type="checkbox" name="family_history" value="None / Not known"><span>None / Not known</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05. Doctor's Assessment -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">05</div><h2>Doctor's Assessment</h2></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><label>Suggested Diagnostic Tests</label><textarea name="suggested_tests" placeholder="e.g. CBC, X-Ray lumber spine, EMG/NCV, Blood glucose fasting"></textarea></div>
+            <div class="field"><label>Recommended Medicines</label><textarea name="medicines" placeholder="e.g. Naproxen 500mg BD × 5 days, Vitamin D3 1000IU OD"></textarea></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-2">
+            <div class="field"><label>Food Recommendation</label><textarea name="food_recommendation" placeholder="Foods to take: e.g. High-fibre vegetables, fruits&#10;Foods to avoid: e.g. Fried food, excess sugar"></textarea></div>
+            <div class="field"><label>Exercise Recommendation</label><textarea name="exercise_recommendation" placeholder="e.g. Light walking 20 min/day, avoid heavy lifting, stretching exercises"></textarea></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-2" style="margin-bottom:1.25rem">
+            <div class="field"><label>Provisional Diagnosis</label><input type="text" name="diagnosis" placeholder="e.g. Occupational lumbar disc herniation"></div>
+            <div class="field"><label>Follow-up Recommended</label><select name="followup"><option value="">— select —</option><option>Within 3 days</option><option>Within 1 week</option><option>Within 2 weeks</option><option>1 month</option><option>Not required</option></select></div>
+          </div>
+          <div class="leave-calendar-box">
+            <div class="leave-calendar-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#0a5157" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#0a5157" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Recommended Medical Leave</span>
+            </div>
+            <div class="leave-calendar-fields">
+              <div class="field">
+                <label>Leave From <span class="unit">(start date)</span></label>
+                <input type="date" name="leave_from" id="leaveFrom" onchange="calcLeaveDays()">
+              </div>
+              <div class="leave-calendar-arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m0 0l-6-6m6 6l-6 6" stroke="#b3bcbe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="field">
+                <label>Leave Up To <span class="unit">(end date)</span></label>
+                <input type="date" name="leave_to" id="leaveTo" onchange="calcLeaveDays()">
+              </div>
+              <div class="leave-days-display" id="leaveDaysDisplay" style="display:none">
+                <div class="leave-days-num" id="leaveDaysNum">0</div>
+                <div class="leave-days-label">Days</div>
+              </div>
+            </div>
+            <input type="hidden" name="recommended_leave" id="recommendedLeaveHidden">
+          </div>
+        </div>
+      </div>
+
+      <!-- 06. Attending Professional -->
+      <div class="section">
+        <div class="section-header"><div class="section-num">06</div><h2>Attending Professional</h2></div>
+        <div class="section-body">
+          <div class="grid-4">
+            <div class="field"><label>Doctor / Staff Name <span class="req">*</span></label><input type="text" name="doctor_name" placeholder="Dr. Name" required></div>
+            <div class="field"><label>BMDC Reg. No. <span class="req">*</span></label><input type="text" name="bmdc_reg" placeholder="e.g. A-12345" required></div>
+            <div class="field"><label>Designation / Role</label><input type="text" name="doctor_role" placeholder="e.g. Medical Officer"></div>
+            <div class="field"><label>Facility / Factory</label><input type="text" name="facility" placeholder="e.g. Unit 3 — Gazipur"></div>
+          </div>
+          <hr class="divider">
+          <div class="grid-2">
+            <div class="field"><label>Entry Date <span class="req">*</span></label><input type="date" name="entry_date" required></div>
+            <div class="field"><label>Additional Notes</label><input type="text" name="notes" placeholder="Optional remarks"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-wrap">
+        <button type="submit" id="doctorSubmitBtn">Submit Final Patient Record</button>
+        <p class="submit-note">Completes the record in Google Sheets · PDF prescription will be available</p>
+        <div id="pdfPanel">
+          <div class="pdf-panel-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0a5157" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Record Complete &amp; Saved</h3>
+          <p>All sections saved to Google Sheets. The prescription has been added to the <strong>Print Queue</strong> — the medical assistant or front desk can open it there to print or download the PDF.</p>
+          <div class="btn-row">
+            <button type="button" class="btn-pdf" onclick="startPrescriptions()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" stroke-width="2" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="white" stroke-width="2"/></svg>
+              Open Print Queue
+            </button>
+            <button type="button" class="btn-new" onclick="startNewPatient()">+ New Patient</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+</div><!-- /container -->
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+/* ── POST to Apps Script as text/plain JSON (no-cors compatible) ── */
+async function postToSheet(payload) {
+  await fetch(APPS_SCRIPT_URL, {
+    method:  'POST',
+    mode:    'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body:    JSON.stringify(payload)
+  });
+}
+
+/* ── State ── */
+let step1Data       = {};
+let step2Data       = {};
+let currentRecordId = '';
+const QUEUE_KEY     = 'whr_pending_queue';
+
+/* ── Queue helpers ── */
+function queueGet() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
+}
+function queueSave(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+function queueAdd(data) {
+  const q = queueGet();
+  q.push({ record_id: data.record_id, patient_name: data.patient_name || 'Unknown',
+    age: data.age || '', sex: data.sex || '', bp: data.bp || '',
+    job_area: data.job_area || '', submitted_at: data.submitted_at, _full: data });
+  queueSave(q);
+}
+function queueRemove(rid) { queueSave(queueGet().filter(p => p.record_id !== rid)); }
+function clearQueue() {
+  if (!confirm('Clear all pending patients from the queue?')) return;
+  queueSave([]); renderQueue();
+}
+function renderQueue() {
+  const q = queueGet();
+  const list  = document.getElementById('queueList');
+  const badge = document.getElementById('queueCount');
+  if (badge) badge.textContent = q.length;
+  if (!list) return;
+  if (q.length === 0) {
+    list.innerHTML = '<div class="queue-empty"><p>No pending patients · Queue is empty</p></div>'; return;
+  }
+  list.innerHTML = q.map((p, i) => {
+    const time = p.submitted_at
+      ? new Date(p.submitted_at).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'})
+      : '—';
+    const info = [p.age ? p.age+'y' : '', p.sex, p.bp].filter(Boolean).join(' · ');
+    const shortId = p.record_id ? p.record_id.split('-').pop() : '—';
+    return `<div class="queue-item">
+      <div class="q-num">${i+1}</div>
+      <div class="q-info">
+        <div class="q-name">${p.patient_name}</div>
+        <div class="q-meta">${info} &nbsp;·&nbsp; Submitted ${time}</div>
+      </div>
+      <span class="q-rid">${shortId}</span>
+      <button class="q-btn" onclick="loadFromQueue('${p.record_id}')">Open</button>
+    </div>`;
+  }).join('');
+}
+function loadFromQueue(rid) {
+  const q    = queueGet();
+  const item = q.find(p => p.record_id === rid);
+  if (!item) { showToast('Record not found in queue.', 'error'); return; }
+  openDoctorForm(item._full || item, rid);
+}
+
+/* ── Helpers ── */
+function show(id)  { document.getElementById(id).style.display = 'block'; }
+function hide(id)  { document.getElementById(id).style.display = 'none'; }
+function hideAll() {
+  ['roleScreen','assistantFormScreen','assistantSuccessScreen','doctorEntryScreen','doctorFormScreen','prescriptionsScreen','dashboardScreen','patientPortalScreen']
+    .forEach(id => hide(id));
+}
+function getChecked(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e=>e.value).join(', ');
+}
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 4500);
+}
+function setRoleStrip(text, color) {
+  const s = document.getElementById('roleStrip');
+  s.innerHTML = text; s.className = 'role-strip visible';
+  s.style.background = color || 'var(--teal-700)';
+}
+function generateRecordId() {
+  const now  = new Date();
+  const date = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  const time = String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+  const rand = Math.random().toString(36).substring(2,6).toUpperCase();
+  return `WHR-${date}-${time}-${rand}`;
+}
+
+/* ── Role selector ── */
+function startAssistant() {
+  hideAll();
+  show('assistantFormScreen');
+  setRoleStrip('Medical Assistant<span class="role-tag">Sections 1 · 2 · 3</span>', '#2e7d32');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function startDoctor() {
+  hideAll();
+  if (currentRecordId) document.getElementById('doctorRidInput').value = currentRecordId;
+  show('doctorEntryScreen');
+  renderQueue();
+  setRoleStrip('Doctor / Physician<span class="role-tag">Sections 4 · 5 · 6</span>', 'var(--teal-700)');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function continueFromSameSession() {
+  if (!currentRecordId) { showToast('No session data found. Please enter the Record ID.', 'error'); return; }
+  openDoctorForm(step1Data, currentRecordId);
+}
+
+/* ── Load Record (doctor enters ID) ── */
+async function loadRecord() {
+  const ridInput = document.getElementById('doctorRidInput');
+  const rid      = ridInput.value.trim().toUpperCase();
+  const errEl    = document.getElementById('ridError');
+  errEl.style.display = 'none';
+
+  if (!rid) { errEl.textContent = 'Please enter a Record ID.'; errEl.style.display = 'block'; return; }
+
+  // If same session data matches → use it
+  if (rid === currentRecordId && Object.keys(step1Data).length > 0) {
+    openDoctorForm(step1Data, rid);
+    return;
+  }
+
+  // Fetch from Apps Script
+  const btn = document.querySelector('.btn-load');
+  btn.textContent = 'Loading…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getRecord&id=${encodeURIComponent(rid)}`);
+    const json = await res.json();
+    if (json.status === 'ok' && json.data) {
+      openDoctorForm(json.data, rid);
+    } else {
+      errEl.textContent = 'Record not found. Check the ID and try again.';
+      errEl.style.display = 'block';
+    }
+  } catch(err) {
+    // If CORS/network fails, allow doctor to proceed without pre-fill
+    openDoctorForm({}, rid);
+    showToast('Could not fetch patient data — please fill all fields manually.', 'error');
+  }
+  btn.textContent = 'Load Patient'; btn.disabled = false;
+}
+
+/* ── Open doctor form ── */
+function openDoctorForm(data, rid) {
+  step1Data       = { ...data };
+  currentRecordId = rid;
+  hideAll();
+  show('doctorFormScreen');
+  document.getElementById('doctorFormRecordId').value = rid;
+  document.getElementById('doctorRidDisplay').textContent = rid;
+  document.querySelector('input[name="entry_date"]').valueAsDate = new Date();
+  buildPatientSummary(data);
+  show('patientSummary');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── Build read-only patient summary card ── */
+function buildPatientSummary(d) {
+  const fmt = v => v || '—';
+  const items = [
+    ['Patient Name', fmt(d.patient_name)],
+    ['Age / Sex',    (d.age ? d.age+' yrs' : '—') + ' · ' + fmt(d.sex)],
+    ['Height / Weight', (d.height_cm||'—')+' cm · '+(d.weight_kg||'—')+' kg'],
+    ['Blood Pressure', fmt(d.bp)],
+    ['Job Role',       fmt(d.job_designation)],
+    ['Total Exp.',     d.total_experience ? d.total_experience+' yrs' : '—'],
+    ['Home Distance',  d.home_distance_km ? d.home_distance_km+' km' : '—'],
+    ['Job Nature',     fmt(d.job_nature)],
+    ['Work Area',      fmt(d.job_area)],
+    ['Chem/Dust Exposure', fmt(d.chemical_exposure)],
+    ['Physical Strain',    fmt(d.physical_strain)],
+  ];
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = items.map(([l,v]) =>
+    `<div class="summary-item"><div class="s-label">${l}</div><div class="s-value">${v}</div></div>`
+  ).join('');
+}
+
+/* ── Operation toggle ── */
+function toggleOp(val) {
+  document.getElementById('operationDetailWrap').style.display = val === 'Yes' ? 'block' : 'none';
+}
+
+/* ── ASSISTANT FORM SUBMIT ── */
+document.getElementById('assistantForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  let valid = true;
+  this.querySelectorAll('[required]').forEach(f => {
+    f.style.borderColor = '';
+    if (!f.value.trim()) { f.style.borderColor = '#c0392b'; valid = false; }
+  });
+  if (!document.querySelector('#assistantForm input[name="job_nature"]:checked')) {
+    document.querySelectorAll('#assistantForm .radio-pill').forEach(p => p.style.borderColor = '#c0392b');
+    valid = false;
+  }
+  if (!valid) { showToast('Please fill all required fields.', 'error'); return; }
+
+  const btn = document.getElementById('assistantSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Saving…';
+
+  const fd = new FormData(this);
+  const data = {};
+  for (const [k,v] of fd.entries()) { if (k !== 'job_area') data[k] = v; }
+  data.job_area     = getChecked('job_area');
+  data.bp           = `${data.bp_systolic||'—'}/${data.bp_diastolic||'—'}`;
+  data.submitted_at = new Date().toISOString();
+  data.record_id    = generateRecordId();
+  data.form_step    = 'step1';
+
+  try {
+    await postToSheet(data);
+    step1Data       = { ...data };
+    currentRecordId = data.record_id;
+    queueAdd(data);
+    document.getElementById('displayRecordId').textContent = data.record_id;
+    hideAll();
+    show('assistantSuccessScreen');
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(err) {
+    showToast('Network error. Check connection and retry.', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Submit for Doctor Review';
+});
+
+/* ── DOCTOR FORM SUBMIT ── */
+document.getElementById('doctorForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  let valid = true;
+  this.querySelectorAll('[required]').forEach(f => {
+    f.style.borderColor = '';
+    if (!f.value.trim()) { f.style.borderColor = '#c0392b'; valid = false; }
+  });
+  if (!valid) { showToast('Please fill all required fields.', 'error'); return; }
+
+  const btn = document.getElementById('doctorSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Saving Final Record…';
+
+  const fd = new FormData(this);
+  const docData = {};
+  for (const [k,v] of fd.entries()) {
+    if (!['chronic_disease','habit','family_history'].includes(k)) docData[k] = v;
+  }
+  docData.chronic_disease = getChecked('chronic_disease');
+  docData.habit           = getChecked('habit');
+  docData.family_history  = getChecked('family_history');
+  docData.leave_from      = document.getElementById('leaveFrom')?.value || '';
+  docData.leave_to        = document.getElementById('leaveTo')?.value   || '';
+  docData.doctor_submitted_at = new Date().toISOString();
+  docData.form_step       = 'step2';
+
+  try {
+    await postToSheet(docData);
+    step2Data = { ...docData };
+    queueRemove(docData.record_id);
+    prescAdd(step1Data, docData);
+    document.getElementById('pdfPanel').style.display = 'block';
+    document.getElementById('pdfPanel').scrollIntoView({behavior:'smooth', block:'center'});
+    showToast('Record complete. Prescription added to Print Queue.', 'success');
+  } catch(err) {
+    showToast('Network error. Check connection and retry.', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Submit Final Patient Record';
+});
+
+/* ── Fill Print Receipt ── */
+function fillReceipt(d1, d2) {
+  const now = new Date();
+  const fmt = v => v || '—';
+  /* Ensure bp is always resolved even if only systolic/diastolic stored */
+  if (!d1.bp && (d1.bp_systolic || d1.bp_diastolic)) {
+    d1.bp = (d1.bp_systolic || '—') + '/' + (d1.bp_diastolic || '—');
+  }
+  const dateStr = d2.entry_date
+    ? new Date(d2.entry_date+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    : '—';
+
+  document.getElementById('pr-ref').textContent           = d1.record_id || '—';
+  document.getElementById('pr-date').textContent          = dateStr;
+  document.getElementById('pr-submitted').textContent     = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('pr-facility-bar').textContent  = fmt(d2.facility);
+  document.getElementById('pr-footer-date').textContent   = now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('pr-doctor_name').textContent   = fmt(d2.doctor_name);
+  document.getElementById('pr-bmdc_reg').textContent      = fmt(d2.bmdc_reg);
+  document.getElementById('pr-doctor_role').textContent   = fmt(d2.doctor_role);
+  document.getElementById('pr-facility').textContent      = fmt(d2.facility);
+  document.getElementById('pr-sig-name').textContent      = fmt(d2.doctor_name);
+  document.getElementById('pr-sig-bmdc').textContent      = d2.bmdc_reg ? 'BMDC: '+d2.bmdc_reg : '';
+  document.getElementById('pr-patient_name').textContent  = fmt(d1.patient_name);
+  document.getElementById('pr-mobile_number').textContent = fmt(d1.mobile_number);
+  document.getElementById('pr-age').textContent           = d1.age ? d1.age+' years' : '—';
+  document.getElementById('pr-sex').textContent           = fmt(d1.sex);
+  document.getElementById('pr-height_cm').textContent     = d1.height_cm ? d1.height_cm+' cm' : '—';
+  document.getElementById('pr-weight_kg').textContent     = d1.weight_kg ? d1.weight_kg+' kg' : '—';
+  document.getElementById('pr-bp').textContent            = fmt(d1.bp);
+  document.getElementById('pr-bed_time').textContent      = fmt(d1.bed_time);
+  document.getElementById('pr-wake_time').textContent     = fmt(d1.wake_time);
+  document.getElementById('pr-sleep').textContent         = (d1.bed_time && d1.wake_time) ? d1.bed_time+' → '+d1.wake_time : '—';
+  document.getElementById('pr-job_designation').textContent  = fmt(d1.job_designation);
+  document.getElementById('pr-total_experience').textContent = d1.total_experience ? d1.total_experience+' yrs' : '—';
+  document.getElementById('pr-home_distance_km').textContent = d1.home_distance_km ? d1.home_distance_km+' km'  : '—';
+  document.getElementById('pr-hours_per_day').textContent  = d1.hours_per_day  ? d1.hours_per_day+' hrs'  : '—';
+  document.getElementById('pr-hours_per_week').textContent = d1.hours_per_week ? d1.hours_per_week+' hrs' : '—';
+  document.getElementById('pr-years_in_role').textContent  = d1.years_in_role  ? d1.years_in_role+' yrs'  : '—';
+  document.getElementById('pr-job_nature').textContent    = fmt(d1.job_nature);
+  document.getElementById('pr-job_area').textContent      = fmt(d1.job_area);
+  document.getElementById('pr-chemical_exposure').textContent     = fmt(d1.chemical_exposure);
+  document.getElementById('pr-noise_exposure').textContent        = fmt(d1.noise_exposure);
+  document.getElementById('pr-physical_strain').textContent       = fmt(d1.physical_strain);
+  document.getElementById('pr-temperature_condition').textContent = fmt(d1.temperature_condition);
+  document.getElementById('pr-primary_symptoms').textContent   = fmt(d2.primary_symptoms);
+  document.getElementById('pr-secondary_symptoms').textContent = fmt(d2.secondary_symptoms);
+  document.getElementById('pr-duration').textContent    = d2.duration_days ? d2.duration_days+' '+(d2.duration_unit||'Days') : '—';
+  const sevEl = document.getElementById('pr-severity');
+  sevEl.textContent = fmt(d2.severity); sevEl.className = 'val sev-'+(d2.severity||'').toLowerCase();
+  document.getElementById('pr-illness_type').textContent       = fmt(d2.illness_type);
+  document.getElementById('pr-illness_earlier').textContent    = fmt(d2.illness_earlier);
+  document.getElementById('pr-consultation_taken').textContent = fmt(d2.consultation_taken);
+  document.getElementById('pr-medication_ongoing').textContent = fmt(d2.medication_ongoing);
+  document.getElementById('pr-operation_history').textContent  = fmt(d2.operation_history);
+  document.getElementById('pr-operation_detail').textContent   = fmt(d2.operation_detail);
+  document.getElementById('pr-chronic_disease').textContent    = fmt(d2.chronic_disease);
+  document.getElementById('pr-habit').textContent              = fmt(d2.habit);
+  document.getElementById('pr-family_history').textContent     = fmt(d2.family_history);
+  document.getElementById('pr-diagnosis').textContent          = fmt(d2.diagnosis);
+  document.getElementById('pr-suggested_tests').textContent    = fmt(d2.suggested_tests);
+  document.getElementById('pr-medicines').textContent          = fmt(d2.medicines);
+  document.getElementById('pr-food_recommendation').textContent     = fmt(d2.food_recommendation);
+  document.getElementById('pr-exercise_recommendation').textContent = fmt(d2.exercise_recommendation);
+  document.getElementById('pr-followup').textContent = fmt(d2.followup);
+  document.getElementById('pr-notes').textContent    = fmt(d2.notes);
+
+  const leaveBox = document.getElementById('pr-leave-box');
+  const leaveDays = d2.recommended_leave ? parseInt(d2.recommended_leave) : 0;
+  if (leaveDays > 0) {
+    document.getElementById('pr-leave-num').textContent = leaveDays;
+    /* Format date range */
+    const datesEl = document.getElementById('pr-leave-dates');
+    if (datesEl) {
+      if (d2.leave_from && d2.leave_to) {
+        const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+        datesEl.textContent = fmtDate(d2.leave_from) + '  →  ' + fmtDate(d2.leave_to);
+      } else {
+        datesEl.textContent = '';
+      }
+    }
+    leaveBox.style.display = 'flex';
+  } else { leaveBox.style.display = 'none'; }
+}
+
+/* ── Prescriptions queue ── */
+const PRESC_KEY = 'whr_prescriptions';
+function prescGet() {
+  try { return JSON.parse(localStorage.getItem(PRESC_KEY) || '[]'); } catch(e) { return []; }
+}
+function prescSave(q) { localStorage.setItem(PRESC_KEY, JSON.stringify(q)); }
+function prescAdd(d1, d2) {
+  const q = prescGet();
+  q.unshift({
+    record_id:   d1.record_id || d2.record_id || '—',
+    patient_name: d1.patient_name || '—',
+    age:          d1.age || '',
+    sex:          d1.sex || '',
+    bp:           d1.bp || '',
+    diagnosis:    d2.diagnosis || '',
+    doctor_name:  d2.doctor_name || '',
+    facility:     d2.facility || '',
+    entry_date:   d2.entry_date || '',
+    saved_at:     new Date().toISOString(),
+    _d1: d1,
+    _d2: d2
+  });
+  prescSave(q);
+}
+function prescRemove(rid) { prescSave(prescGet().filter(p => p.record_id !== rid)); renderPrescriptions(); }
+function clearPrescriptions() {
+  if (!confirm('Remove all prescriptions from the queue?')) return;
+  prescSave([]); renderPrescriptions();
+}
+function startPrescriptions() {
+  hideAll();
+  show('prescriptionsScreen');
+  renderPrescriptions();
+  setRoleStrip('Print Prescriptions<span class="role-tag">Print Queue</span>', 'var(--blue-700)');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function renderPrescriptions() {
+  const q     = prescGet();
+  const list  = document.getElementById('prescList');
+  const badge = document.getElementById('prescCount');
+  if (badge) badge.textContent = q.length;
+  if (!list) return;
+  if (q.length === 0) {
+    list.innerHTML = `<div class="presc-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#b3bcbe" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8m8 4H8" stroke="#b3bcbe" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <p>No prescriptions yet · Completed records will appear here</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = q.map((p, i) => {
+    const initials = (p.patient_name || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const dateStr  = p.entry_date
+      ? new Date(p.entry_date+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+      : (p.saved_at ? new Date(p.saved_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '—');
+    const meta = [p.age ? p.age+'y' : '', p.sex, p.bp, p.doctor_name ? 'Dr. '+p.doctor_name.replace(/^Dr\.?\s*/i,'') : ''].filter(Boolean).join(' · ');
+    return `<div class="presc-card">
+      <div class="pc-avatar">${initials}</div>
+      <div class="pc-info">
+        <div class="pc-name">${p.patient_name}</div>
+        <div class="pc-meta">${meta} &nbsp;·&nbsp; ${dateStr}</div>
+        ${p.diagnosis ? `<div class="pc-diagnosis">${p.diagnosis}</div>` : ''}
+      </div>
+      <span class="pc-rid">${p.record_id}</span>
+      <div class="pc-actions">
+        <button class="btn-print" onclick="printPrescription('${p.record_id}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-2 4H8v-6h8v6z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>
+          Print / PDF
+        </button>
+        <button class="btn-del" onclick="prescRemove('${p.record_id}')" title="Remove from queue">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function printPrescription(rid) {
+  const q    = prescGet();
+  const item = q.find(p => p.record_id === rid);
+  if (!item) { showToast('Prescription not found.', 'error'); return; }
+  fillReceipt(item._d1 || {}, item._d2 || {});
+  setTimeout(() => window.print(), 150);
+}
+
+
+
+
+
+/* ── Leave calendar auto-calculator ── */
+function calcLeaveDays() {
+  const from = document.getElementById('leaveFrom')?.value;
+  const to   = document.getElementById('leaveTo')?.value;
+  const disp = document.getElementById('leaveDaysDisplay');
+  const num  = document.getElementById('leaveDaysNum');
+  const hidden = document.getElementById('recommendedLeaveHidden');
+  if (from && to) {
+    const diff = Math.round((new Date(to) - new Date(from)) / (1000 * 60 * 60 * 24)) + 1;
+    if (diff > 0) {
+      if (num)  num.textContent = diff;
+      if (disp) disp.style.display = 'flex';
+      if (hidden) hidden.value = diff;
+    } else {
+      if (disp) disp.style.display = 'none';
+      if (hidden) hidden.value = '';
+    }
+  } else {
+    if (disp) disp.style.display = 'none';
+  }
+}
+
+function savePDF() {
+  fillReceipt(step1Data, step2Data);
+  setTimeout(() => window.print(), 150);
+}
+
+function startNewPatient() {
+  step1Data = {}; step2Data = {}; currentRecordId = '';
+  document.getElementById('assistantForm').reset();
+  document.getElementById('doctorForm').reset();
+  document.getElementById('pdfPanel').style.display = 'none';
+  document.getElementById('patientSummary').style.display = 'none';
+  document.getElementById('ridError').style.display = 'none';
+  document.getElementById('roleStrip').className = 'role-strip';
+  hideAll(); show('roleScreen');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── Auto-refresh prescription badge on role screen ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const q = prescGet();
+  const el = document.querySelector('.presc-badge-count');
+  if (el) el.textContent = q.length;
+});
+
+/* ════════════════════════════════════════════════════
+   MANAGEMENT ANALYTICS DASHBOARD
+   Uses same APPS_SCRIPT_URL — no separate config needed
+════════════════════════════════════════════════════ */
+let dashPeriod   = 'daily';
+let dashRecords  = [];
+let dashCharts   = {};
+const DASH_COLORS = ['#0e7a82','#4db6c0','#0a5157','#cef0f2','#f59e0b','#fde68a','#dc2626','#fecaca','#16a34a','#bbf7d0','#1d4ed8','#bfdbfe','#7c3aed','#ddd6fe'];
+
+function startDashboard() {
+  hideAll();
+  show('dashboardScreen');
+  setRoleStrip('Management Dashboard<span class="role-tag">Analytics</span>', '#b45309');
+  window.scrollTo({top:0,behavior:'smooth'});
+  dashLoad();
+}
+
+let dashDateFrom = null;  // custom range start
+let dashDateTo   = null;  // custom range end
+
+function dashSetPeriod(p, btn) {
+  dashPeriod = p;
+  document.querySelectorAll('.dash-period-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  const rangeRow   = document.getElementById('dashDateRangeRow');
+  const rangeLabel = document.getElementById('dashRangeLabel');
+
+  if (p === 'weekly') {
+    // Auto-set this week Mon–today
+    const now  = new Date();
+    const mon  = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    document.getElementById('dashDateFrom').value = toISO(mon);
+    document.getElementById('dashDateTo').value   = toISO(now);
+    dashDateFrom = mon;
+    dashDateTo   = new Date(now.setHours(23,59,59,999));
+    rangeRow.style.display   = 'flex';
+    rangeLabel.style.display = 'block';
+    rangeLabel.textContent   = fmtShort(mon) + ' – ' + fmtShort(new Date());
+    if (dashRecords.length) dashRenderAll();
+  } else if (p === 'custom') {
+    rangeRow.style.display   = 'flex';
+    rangeLabel.style.display = 'none';
+    // Keep previous dates if set, else default to last 30 days
+    if (!document.getElementById('dashDateFrom').value) {
+      const ago30 = new Date(); ago30.setDate(ago30.getDate() - 30);
+      document.getElementById('dashDateFrom').value = toISO(ago30);
+      document.getElementById('dashDateTo').value   = toISO(new Date());
+    }
+  } else {
+    rangeRow.style.display   = 'none';
+    rangeLabel.style.display = 'none';
+    dashDateFrom = null;
+    dashDateTo   = null;
+    if (dashRecords.length) dashRenderAll();
+  }
+}
+
+function dashApplyRange() {
+  const fromVal = document.getElementById('dashDateFrom').value;
+  const toVal   = document.getElementById('dashDateTo').value;
+  if (!fromVal || !toVal) { showToast('Please select both From and To dates.', 'error'); return; }
+  dashDateFrom = new Date(fromVal + 'T00:00:00');
+  dashDateTo   = new Date(toVal   + 'T23:59:59');
+  if (dashDateFrom > dashDateTo) { showToast('From date must be before To date.', 'error'); return; }
+  const lbl = document.getElementById('dashRangeLabel');
+  lbl.textContent   = fmtShort(dashDateFrom) + ' – ' + fmtShort(dashDateTo);
+  lbl.style.display = 'block';
+  if (dashRecords.length) dashRenderAll();
+}
+
+function toISO(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+function fmtShort(d) {
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+async function dashLoad() {
+  const btn = document.getElementById('dashRefreshBtn');
+  btn.disabled = true;
+  document.getElementById('dashInner').innerHTML =
+    "<div class=\"dash-loading\"><div class=\"spin-ring\"></div><p style=\"font-family:DM Mono,monospace;font-size:11px;color:var(--ink-30)\">Fetching records from Google Sheets…</p></div>";
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.status !== 'ok' || !json.records) throw new Error(json.message || 'No data returned');
+    dashRecords = json.records.filter(r => r.patient_name || r.primary_symptoms);
+    dashRenderAll();
+  } catch(err) {
+    document.getElementById('dashInner').innerHTML =
+      `<div class="dash-no-data">Failed to load: ${err.message}<br><br>
+       <button onclick="dashLoad()" style="font-family:DM Mono,monospace;font-size:11px;background:var(--teal-700);color:white;border:none;border-radius:4px;padding:6px 16px;cursor:pointer">Retry</button></div>`;
+  }
+  btn.disabled = false;
+}
+
+function dashFilter() {
+  const now = new Date();
+  return dashRecords.filter(r => {
+    const d = new Date(r.submitted_at || r.entry_date);
+    if (isNaN(d)) return false;
+    if (dashPeriod === 'daily')  return d.toDateString() === now.toDateString();
+    if (dashPeriod === 'weekly' || dashPeriod === 'custom') {
+      if (!dashDateFrom || !dashDateTo) return true;
+      return d >= dashDateFrom && d <= dashDateTo;
+    }
+    if (dashPeriod === 'monthly') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return d.getFullYear() === now.getFullYear(); // yearly
+  });
+}
+
+function dashCount(records, field) {
+  const m = {};
+  records.forEach(r => {
+    const v = r[field];
+    if (!v || v === '' || v === '—') return;
+    v.toString().split(',').forEach(x => {
+      const k = x.trim();
+      if (k && k !== 'None' && k !== 'None / Not known') m[k] = (m[k]||0) + 1;
+    });
+  });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function dashCountExact(records, field) {
+  const m = {};
+  records.forEach(r => { const k=(r[field]||'').trim(); if(k&&k!=='—') m[k]=(m[k]||0)+1; });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function dashAvg(records, field) {
+  const v = records.map(r=>parseFloat(r[field])).filter(x=>!isNaN(x)&&x>0);
+  return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : '—';
+}
+function destroyDashChart(id) { if(dashCharts[id]){dashCharts[id].destroy();delete dashCharts[id];} }
+
+function dashRenderAll() {
+  const f = dashFilter();
+  const all = dashRecords;
+  const labelMap = {daily:'Today', weekly:'This Week', monthly:'This Month', yearly:'This Year', custom:'Custom Range'};
+  let label = labelMap[dashPeriod] || dashPeriod;
+  if ((dashPeriod === 'weekly' || dashPeriod === 'custom') && dashDateFrom && dashDateTo) {
+    label = fmtShort(dashDateFrom) + ' → ' + fmtShort(dashDateTo);
+  }
+  document.getElementById('dashSubLabel').textContent =
+    label + ' · ' + f.length + ' records (' + all.length + ' all-time) · Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  let html = '';
+
+  // KPIs
+  const crit  = f.filter(r=>r.severity==='Critical').length;
+  const sev   = f.filter(r=>r.severity==='Severe').length;
+  const comp  = f.filter(r=>r.doctor_submitted_at).length;
+  const critPct = f.length ? Math.round(((crit+sev)/f.length)*100) : 0;
+  html += `<div class="dash-kpi-row">
+    <div class="dash-kpi"><div class="dash-kpi-label">Total Cases</div><div class="dash-kpi-val">${f.length}</div><div class="dash-kpi-sub">${all.length} all-time</div></div>
+    <div class="dash-kpi d"><div class="dash-kpi-label">Critical + Severe</div><div class="dash-kpi-val" style="color:#dc2626">${crit+sev}</div><div class="dash-kpi-sub">${critPct}% of cases</div></div>
+    <div class="dash-kpi w"><div class="dash-kpi-label">Avg Leave Days</div><div class="dash-kpi-val" style="color:#b45309">${dashAvg(f,'recommended_leave')}</div><div class="dash-kpi-sub">per patient</div></div>
+    <div class="dash-kpi g"><div class="dash-kpi-label">Completed Records</div><div class="dash-kpi-val" style="color:#16a34a">${comp}</div><div class="dash-kpi-sub">${f.length-comp} pending doctor</div></div>
+    <div class="dash-kpi i"><div class="dash-kpi-label">Avg Age</div><div class="dash-kpi-val" style="color:#1d4ed8">${dashAvg(f,'age')}</div><div class="dash-kpi-sub">years</div></div>
+    <div class="dash-kpi"><div class="dash-kpi-label">Avg Hrs/Week</div><div class="dash-kpi-val">${dashAvg(f,'hours_per_week')}</div><div class="dash-kpi-sub">working hours</div></div>
+  </div>`;
+
+  // Insight strip
+  const topArea = dashCount(f,'job_area')[0];
+  const topDis  = dashCount(f,'chronic_disease')[0];
+  html += `<div class="dash-insight">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#4db6c0" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <p>${critPct}% of cases this period are Severe or Critical.${topArea?` Highest-risk area: <strong>${topArea[0]}</strong> (${topArea[1]} cases).`:''}${topDis?` Most common chronic condition: <strong>${topDis[0]}</strong> (${topDis[1]} patients).`:''}</p>
+  </div>`;
+
+  // Chart containers
+  html += `
+  <div class="dash-section-head">Illness Trend Over Time</div>
+  <div class="dash-charts-1"><div class="dash-chart-card"><div class="dash-chart-title" id="trendTitle">Trend</div><div class="dash-chart-wrap h300"><canvas id="dc_trend"></canvas></div></div></div>
+
+  <div class="dash-section-head">Job Area &amp; Job Nature</div>
+  <div class="dash-charts-2">
+    <div class="dash-chart-card"><div class="dash-chart-title">Cases by Work Area</div><div class="dash-chart-wrap h260"><canvas id="dc_area"></canvas></div></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Cases by Job Nature</div><div class="dash-chart-wrap h260"><canvas id="dc_nature"></canvas></div></div>
+  </div>
+
+  <div class="dash-section-head">Disease &amp; Severity</div>
+  <div class="dash-charts-2">
+    <div class="dash-chart-card"><div class="dash-chart-title">Severity Distribution</div><div class="dash-chart-wrap h220"><canvas id="dc_severity"></canvas></div></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Type of Illness</div><div class="dash-chart-wrap h220"><canvas id="dc_illtype"></canvas></div></div>
+  </div>
+
+  <div class="dash-section-head">Top Risk Factors</div>
+  <div class="dash-charts-2">
+    <div class="dash-chart-card"><div class="dash-chart-title">Top Chronic Diseases</div><ul class="dash-rank-list" id="dc_chronic"></ul></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Environmental Exposure</div><ul class="dash-rank-list" id="dc_env"></ul></div>
+  </div>
+
+  <div class="dash-section-head">Demographics</div>
+  <div class="dash-charts-3">
+    <div class="dash-chart-card"><div class="dash-chart-title">Sex Distribution</div><div class="dash-chart-wrap h220"><canvas id="dc_sex"></canvas></div></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Age Groups</div><div class="dash-chart-wrap h220"><canvas id="dc_age"></canvas></div></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Work Hrs vs Severity</div><div class="dash-chart-wrap h220"><canvas id="dc_hrs"></canvas></div></div>
+  </div>
+
+  <div class="dash-section-head">Medical Leave &amp; Follow-up</div>
+  <div class="dash-charts-2">
+    <div class="dash-chart-card"><div class="dash-chart-title">Leave Duration</div><div class="dash-chart-wrap h220"><canvas id="dc_leave"></canvas></div></div>
+    <div class="dash-chart-card"><div class="dash-chart-title">Follow-up Required</div><div class="dash-chart-wrap h220"><canvas id="dc_followup"></canvas></div></div>
+  </div>
+
+  <div class="dash-section-head">Management Action Plan <span style="font-weight:400;color:var(--ink-30);font-size:9px;letter-spacing:0;text-transform:none;margin-left:6px">Auto-generated from data</span></div>
+  <div class="dash-action-grid" id="dc_actions"></div>
+  <div style="height:2rem"></div>`;
+
+  document.getElementById('dashInner').innerHTML = html;
+
+  // Render charts after DOM update
+  setTimeout(() => {
+    dashDrawTrend(all); dashDrawArea(f); dashDrawNature(f);
+    dashDrawSeverity(f); dashDrawIllType(f);
+    dashDrawRank('dc_chronic', dashCount(f,'chronic_disease'));
+    dashDrawEnvRank(f);
+    dashDrawSex(f); dashDrawAge(f); dashDrawHrs(f);
+    dashDrawLeave(f); dashDrawFollowup(f);
+    dashDrawActions(f, all);
+  }, 50);
+}
+
+function dashDrawTrend(all) {
+  destroyDashChart('dc_trend');
+  const grouped = {};
+  all.forEach(r => {
+    const d = new Date(r.submitted_at || r.entry_date);
+    if (isNaN(d)) return;
+    const key = (dashPeriod === 'daily' || dashPeriod === 'weekly' || dashPeriod === 'custom')
+              ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
+              : dashPeriod === 'monthly'
+              ? d.toLocaleDateString('en-GB',{month:'short',year:'numeric'})
+              : d.getFullYear().toString();
+    grouped[key] = (grouped[key]||0) + 1;
+  });
+  const entries = Object.entries(grouped).slice(-30);
+  const titles = {daily:'Daily Trend',weekly:'Weekly — Day by Day',monthly:'Monthly Trend',yearly:'Yearly Trend',custom:'Custom Range Trend'};
+  document.getElementById('trendTitle').textContent = titles[dashPeriod] || 'Trend';
+  const ctx = document.getElementById('dc_trend').getContext('2d');
+  dashCharts.dc_trend = new Chart(ctx, {
+    type:'line',
+    data:{labels:entries.map(e=>e[0]),datasets:[{label:'Cases',data:entries.map(e=>e[1]),borderColor:'#0e7a82',backgroundColor:'rgba(14,122,130,0.07)',fill:true,tension:0.4,pointBackgroundColor:'#0e7a82',pointRadius:4,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{stepSize:1,font:{size:10}}}}}
+  });
+}
+function dashDrawBar(id, data, horizontal) {
+  destroyDashChart(id);
+  if (!data.length) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  dashCharts[id] = new Chart(el.getContext('2d'), {
+    type:'bar',
+    data:{labels:data.map(d=>d[0]),datasets:[{label:'Cases',data:data.map(d=>d[1]),backgroundColor:DASH_COLORS,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:horizontal?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:horizontal?{color:'rgba(0,0,0,0.04)'}:{display:false},ticks:{font:{size:10}}},y:{grid:horizontal?{display:false}:{color:'rgba(0,0,0,0.04)'},beginAtZero:true,ticks:{font:{size:10}}}}}
+  });
+}
+function dashDrawDoughnut(id, data) {
+  destroyDashChart(id);
+  if (!data.length) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  dashCharts[id] = new Chart(el.getContext('2d'), {
+    type:'doughnut',
+    data:{labels:data.map(d=>d[0]),datasets:[{data:data.map(d=>d[1]),backgroundColor:DASH_COLORS.slice(0,data.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}}}}
+  });
+}
+function dashDrawArea(f)     { dashDrawBar('dc_area', dashCount(f,'job_area').slice(0,8), true); }
+function dashDrawNature(f)   { dashDrawDoughnut('dc_nature', dashCountExact(f,'job_nature')); }
+function dashDrawIllType(f)  { dashDrawDoughnut('dc_illtype', dashCountExact(f,'illness_type').filter(d=>d[0])); }
+function dashDrawSex(f)      { dashDrawDoughnut('dc_sex', dashCountExact(f,'sex')); }
+function dashDrawSeverity(f) {
+  destroyDashChart('dc_severity');
+  const el = document.getElementById('dc_severity'); if(!el)return;
+  const order=['Mild','Moderate','Severe','Critical'];
+  const colors=['#16a34a','#f59e0b','#ea580c','#dc2626'];
+  dashCharts.dc_severity = new Chart(el.getContext('2d'),{
+    type:'bar',
+    data:{labels:order,datasets:[{label:'Cases',data:order.map(s=>f.filter(r=>r.severity===s).length),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{stepSize:1,font:{size:10}}}}}
+  });
+}
+function dashDrawAge(f) {
+  destroyDashChart('dc_age');
+  const el=document.getElementById('dc_age'); if(!el)return;
+  const b={'15–24':0,'25–34':0,'35–44':0,'45–54':0,'55+':0};
+  f.forEach(r=>{const a=parseInt(r.age);if(!a)return;if(a<25)b['15–24']++;else if(a<35)b['25–34']++;else if(a<45)b['35–44']++;else if(a<55)b['45–54']++;else b['55+']++;});
+  dashCharts.dc_age=new Chart(el.getContext('2d'),{type:'bar',data:{labels:Object.keys(b),datasets:[{data:Object.values(b),backgroundColor:'#4db6c0',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{stepSize:1,font:{size:10}}}}}});
+}
+function dashDrawHrs(f) {
+  destroyDashChart('dc_hrs');
+  const el=document.getElementById('dc_hrs'); if(!el)return;
+  const order=['Mild','Moderate','Severe','Critical'];
+  const colors=['#16a34a','#f59e0b','#ea580c','#dc2626'];
+  const avgs=order.map(s=>{const v=f.filter(r=>r.severity===s).map(r=>parseFloat(r.hours_per_week)).filter(x=>!isNaN(x)&&x>0);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):0;});
+  dashCharts.dc_hrs=new Chart(el.getContext('2d'),{type:'bar',data:{labels:order,datasets:[{data:avgs,backgroundColor:colors,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10}}}}}});
+}
+function dashDrawLeave(f) {
+  destroyDashChart('dc_leave');
+  const el=document.getElementById('dc_leave'); if(!el)return;
+  const b={'0 days':0,'1–3':0,'4–7':0,'8–14':0,'15+':0};
+  f.forEach(r=>{const d=parseInt(r.recommended_leave);if(isNaN(d)||d===0)b['0 days']++;else if(d<=3)b['1–3']++;else if(d<=7)b['4–7']++;else if(d<=14)b['8–14']++;else b['15+']++;});
+  dashCharts.dc_leave=new Chart(el.getContext('2d'),{type:'doughnut',data:{labels:Object.keys(b),datasets:[{data:Object.values(b),backgroundColor:['#cef0f2','#4db6c0','#0e7a82','#f59e0b','#dc2626'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
+}
+function dashDrawFollowup(f) { dashDrawBar('dc_followup', dashCountExact(f,'followup').filter(d=>d[0]&&d[0]!=='Not required'), true); }
+
+function dashDrawRank(id, data) {
+  const el=document.getElementById(id); if(!el)return;
+  if(!data.length){el.innerHTML='<li class="dash-rank-item"><span style="font-size:0.8rem;color:var(--ink-30)">No data</span></li>';return;}
+  const max=data[0][1];
+  el.innerHTML=data.slice(0,8).map((d,i)=>`
+    <li class="dash-rank-item">
+      <span class="dash-rank-n">${i+1}</span>
+      <span class="dash-rank-label">${d[0]}</span>
+      <div class="dash-rank-bar-wrap"><div class="dash-rank-bar" style="width:${Math.round((d[1]/max)*100)}%"></div></div>
+      <span class="dash-rank-count">${d[1]}</span>
+    </li>`).join('');
+}
+
+function dashDrawEnvRank(f) {
+  const risks=[
+    ...dashCountExact(f,'chemical_exposure').filter(d=>d[0]&&!d[0].startsWith('No')),
+    ...dashCountExact(f,'noise_exposure').filter(d=>d[0]&&!d[0].includes('Normal')),
+    ...dashCountExact(f,'physical_strain').filter(d=>d[0]==='High'),
+    ...dashCountExact(f,'temperature_condition').filter(d=>d[0]&&d[0]!=='Normal')
+  ].sort((a,b)=>b[1]-a[1]);
+  dashDrawRank('dc_env', risks);
+}
+
+function dashDrawActions(f, all) {
+  const el=document.getElementById('dc_actions'); if(!el)return;
+  if(!f.length){el.innerHTML='<p class="dash-no-data">No records in this period for action plan.</p>';return;}
+  const total=f.length;
+  const critSev=f.filter(r=>r.severity==='Critical'||r.severity==='Severe').length;
+  const critPct=Math.round((critSev/total)*100);
+  const topArea=dashCount(f,'job_area')[0];
+  const topDis=dashCount(f,'chronic_disease')[0];
+  const highStrain=f.filter(r=>r.physical_strain==='High').length;
+  const highNoise=f.filter(r=>r.noise_exposure&&!r.noise_exposure.includes('Normal')).length;
+  const avgHrs=parseFloat(dashAvg(f,'hours_per_week'));
+  const avgLeave=parseFloat(dashAvg(f,'recommended_leave'));
+  const pending=f.filter(r=>!r.doctor_submitted_at).length;
+
+  const acts=[];
+  if(critPct>=30) acts.push({c:'cr',pri:'Urgent Action',t:'High Rate of Severe/Critical Cases',b:`${critPct}% of cases are Severe or Critical. Activate emergency medical protocols immediately.`,m:`${critSev} of ${total} cases`});
+  else if(critSev>0) acts.push({c:'wa',pri:'Action Required',t:'Severe Cases Detected',b:`${critSev} severe/critical cases. Ensure rapid triage and specialist referral pathways are active.`,m:`${critPct}% severity rate`});
+
+  if(topArea&&topArea[1]>=2) acts.push({c:'wa',pri:'Action Required',t:`High Risk Area: ${topArea[0]}`,b:'Conduct immediate ergonomic and environmental audit. Consider workstation improvements and job rotation policies.',m:`${topArea[1]} cases from this area`});
+
+  if(topDis&&topDis[1]>=2) acts.push({c:'wa',pri:'Action Required',t:`Chronic Disease: ${topDis[0]}`,b:'Arrange periodic health screening camps and disease management education. Coordinate with MBBS doctors for follow-up.',m:`${topDis[1]} patients affected`});
+
+  if(highStrain>=3) acts.push({c:'wa',pri:'Action Required',t:'Physical Strain Overload',b:'Introduce job rotation, scheduled rest breaks, and ergonomic training. Review manual handling workload standards.',m:`${highStrain} high-strain workers`});
+
+  if(highNoise>=3) acts.push({c:'in',pri:'Monitor',t:'Noise Exposure Risk',b:'Workers in above-normal noise. Enforce hearing protection, conduct audiometry testing, and do noise level mapping.',m:`${highNoise} workers exposed`});
+
+  if(avgHrs>54) acts.push({c:'wa',pri:'Action Required',t:'Excessive Working Hours',b:`Average ${avgHrs} hrs/week exceeds recommended 48 hrs. Review shift scheduling and ensure mandatory rest compliance.`,m:`${avgHrs} avg hrs/week`});
+  else if(avgHrs>0) acts.push({c:'go',pri:'Positive',t:'Working Hours Within Limit',b:`Average ${avgHrs} hrs/week is within acceptable range. Continue monitoring for compliance.`,m:`${avgHrs} avg hrs/week`});
+
+  if(avgLeave>5) acts.push({c:'in',pri:'Monitor',t:'High Medical Leave Usage',b:'Average leave exceeds 5 days. Review root causes of prolonged illness and address occupational stressors.',m:`${avgLeave} avg leave days`});
+
+  if(pending>0) acts.push({c:'in',pri:'Monitor',t:`${pending} Records Pending Doctor Review`,b:'Ensure timely clinical completion for all registered patients.',m:`${pending} incomplete records`});
+
+  acts.push({c:'in',pri:'Preventive Programme',t:'Regular Health Screening',b:'Schedule quarterly health camps: BP, glucose, BMI, and vision. Prioritise departments with highest illness rates.',m:'Recommended quarterly'});
+
+  if(!acts.find(a=>a.c==='go')) acts.push({c:'go',pri:'Positive',t:'Active Health Monitoring',b:`All-time registry contains ${all.length} patient records. Continued data collection strengthens workplace health evidence base.`,m:`${all.length} records total`});
+
+  el.innerHTML=acts.map(a=>`
+    <div class="dash-action ${a.c}">
+      <div class="dash-action-pri">${a.c==='cr'?'🔴':a.c==='wa'?'🟡':a.c==='go'?'🟢':'ℹ️'} ${a.pri}</div>
+      <h4>${a.t}</h4>
+      <p>${a.b}</p>
+      <div class="dash-action-metric">${a.m}</div>
+    </div>`).join('');
+}
+
+/* ── Auto-refresh prescription badge on role screen ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const q = prescGet();
+  const el = document.querySelector('.presc-badge-count');
+  if (el) el.textContent = q.length;
+});
+
+/* ════════════════════════════════════════════════════
+   PATIENT PORTAL — My Health File
+   Patient enters mobile number → sees all their visits
+════════════════════════════════════════════════════ */
+
+// Active portal records for printing
+let portalRecords = [];
+
+function startPatientPortal() {
+  hideAll();
+  show('patientPortalScreen');
+  setRoleStrip('Patient Portal<span class="role-tag">My Health File</span>', '#7c3aed');
+  // Clear previous search
+  document.getElementById('portalMobileInput').value = '';
+  document.getElementById('portalError').style.display = 'none';
+  document.getElementById('portalResults').style.display = 'none';
+  document.getElementById('portalResults').innerHTML = '';
+  portalRecords = [];
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(() => document.getElementById('portalMobileInput').focus(), 300);
+}
+
+async function portalSearch() {
+  const mobile = document.getElementById('portalMobileInput').value.trim();
+  const errEl  = document.getElementById('portalError');
+  const btn    = document.getElementById('portalSearchBtn');
+
+  errEl.style.display = 'none';
+  document.getElementById('portalResults').style.display = 'none';
+
+  if (!mobile) {
+    errEl.textContent = 'Please enter your mobile number.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:white;width:12px;height:12px;border-width:2px"></span> Searching…';
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL + '?action=getPatient&mobile=' + encodeURIComponent(mobile));
+    const json = await res.json();
+
+    if (json.status !== 'ok') {
+      errEl.textContent = 'Server error: ' + (json.message || 'Unknown error');
+      errEl.style.display = 'block';
+    } else if (!json.records || json.records.length === 0) {
+      // Show debug info to help trace the issue
+      const debugMsg = json.message || '';
+      errEl.textContent = 'No records found for this mobile number. ' +
+        (debugMsg ? '(' + debugMsg + ')' : 'Please check the number and try again.');
+      errEl.style.display = 'block';
+    } else {
+      portalRecords = json.records;
+      renderPortalResults(json.records);
+    }
+  } catch(err) {
+    errEl.textContent = 'Could not connect. Please check your internet and try again.';
+    errEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="white" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="white" stroke-width="2" stroke-linecap="round"/></svg> Find My Records';
+}
+
+function renderPortalResults(records) {
+  const fmt  = v => (v && v !== '' && v !== '—') ? v : '—';
+  const first = records[0];
+  const name  = fmt(first.patient_name);
+  const initials = name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+
+  let html = '';
+
+  // Patient banner
+  html += `
+  <div class="portal-patient-banner">
+    <div class="portal-avatar">${initials}</div>
+    <div class="portal-patient-info">
+      <h3>${name}</h3>
+      <p>${fmt(first.mobile_number)} &nbsp;·&nbsp; ${first.age ? first.age + ' years' : ''} &nbsp;·&nbsp; ${fmt(first.sex)}</p>
+    </div>
+    <div class="portal-visit-count">
+      <div class="vc-num">${records.length}</div>
+      <div class="vc-label">Visit${records.length !== 1 ? 's' : ''}</div>
+    </div>
+  </div>`;
+
+  // Visit cards (newest first)
+  html += '<div class="portal-visits-list">';
+  [...records].reverse().forEach((r, i) => {
+    const visitNum  = records.length - i;
+    const dateStr   = r.entry_date
+      ? new Date(r.entry_date + 'T00:00:00').toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})
+      : (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : '—');
+    const sev       = (r.severity || '').toLowerCase();
+    const sevClass  = sev ? 'sev-' + sev : '';
+    const sevBadge  = r.severity ? `<span class="portal-sev-badge ${sevClass}">${r.severity}</span>` : '';
+    const isComplete = r.doctor_submitted_at || r.doctor_name;
+
+    html += `
+    <div class="portal-visit-card">
+      <div class="portal-visit-header">
+        <div class="portal-visit-num">${visitNum}</div>
+        <div class="portal-visit-date">${dateStr}</div>
+        ${sevBadge}
+        <div class="portal-visit-doc">${r.doctor_name ? 'Dr. ' + r.doctor_name.replace(/^Dr\.?\s*/i,'') : 'Pending doctor'}</div>
+      </div>
+      <div class="portal-visit-body">`;
+
+    if (!isComplete) {
+      html += `<p style="font-size:0.83rem;color:var(--ink-30);font-family:DM Mono,monospace;text-align:center;padding:1rem 0">Record pending doctor assessment</p>`;
+    } else {
+      // Basic info row
+      html += `<div class="portal-detail-grid">
+        <div class="portal-detail-item">
+          <div class="pd-label">Facility</div>
+          <div class="pd-val">${fmt(r.facility)}</div>
+        </div>
+        <div class="portal-detail-item">
+          <div class="pd-label">Job / Work Area</div>
+          <div class="pd-val">${fmt(r.job_area)}</div>
+        </div>`;
+
+      if (r.primary_symptoms) {
+        html += `<div class="portal-detail-item full">
+          <div class="pd-label">Primary Symptoms</div>
+          <div class="pd-val">${fmt(r.primary_symptoms)}</div>
+        </div>`;
+      }
+      if (r.secondary_symptoms) {
+        html += `<div class="portal-detail-item full">
+          <div class="pd-label">Secondary Symptoms</div>
+          <div class="pd-val">${fmt(r.secondary_symptoms)}</div>
+        </div>`;
+      }
+      if (r.duration_days) {
+        html += `<div class="portal-detail-item">
+          <div class="pd-label">Duration</div>
+          <div class="pd-val">${r.duration_days} ${r.duration_unit || 'Days'}</div>
+        </div>`;
+      }
+      if (r.diagnosis) {
+        html += `<div class="portal-detail-item full">
+          <div class="pd-label">Diagnosis</div>
+          <div class="pd-val">${fmt(r.diagnosis)}</div>
+        </div>`;
+      }
+      html += `</div>`;
+
+      // Prescription box
+      const hasRx = r.medicines || r.suggested_tests || r.food_recommendation || r.exercise_recommendation;
+      if (hasRx) {
+        html += `<div class="portal-rx-box">
+          <div class="portal-rx-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#0a5157" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Doctor's Prescription
+          </div>
+          <div class="portal-rx-grid">`;
+
+        if (r.medicines) html += `<div class="portal-detail-item full"><div class="pd-label">Recommended Medicines</div><div class="pd-val" style="white-space:pre-wrap">${fmt(r.medicines)}</div></div>`;
+        if (r.suggested_tests) html += `<div class="portal-detail-item full"><div class="pd-label">Suggested Tests</div><div class="pd-val" style="white-space:pre-wrap">${fmt(r.suggested_tests)}</div></div>`;
+        if (r.food_recommendation) html += `<div class="portal-detail-item"><div class="pd-label">Food Recommendation</div><div class="pd-val" style="white-space:pre-wrap">${fmt(r.food_recommendation)}</div></div>`;
+        if (r.exercise_recommendation) html += `<div class="portal-detail-item"><div class="pd-label">Exercise Recommendation</div><div class="pd-val" style="white-space:pre-wrap">${fmt(r.exercise_recommendation)}</div></div>`;
+
+        html += `</div>`; // rx-grid
+
+        if (r.followup) {
+          html += `<div style="margin-top:10px"><div class="pd-label">Follow-up</div><div class="pd-val" style="margin-top:3px">${fmt(r.followup)}</div></div>`;
+        }
+        html += `</div>`; // rx-box
+      }
+
+      // Leave pill
+      if (r.recommended_leave && parseInt(r.recommended_leave) > 0) {
+        const leaveDates = (r.leave_from && r.leave_to)
+          ? ` (${new Date(r.leave_from+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${new Date(r.leave_to+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})})`
+          : '';
+        html += `<div class="portal-leave-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#b45309" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Medical leave: <strong>${r.recommended_leave} days</strong>${leaveDates}
+        </div>`;
+      }
+
+      // Print button
+      html += `<button class="btn-print-rx" onclick="portalPrint(${records.indexOf(r)})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-2 4H8v-6h8v6z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Print Prescription
+      </button>`;
+    }
+
+    html += `</div></div>`; // visit-body, visit-card
+  });
+
+  html += '</div>'; // visits-list
+
+  const el = document.getElementById('portalResults');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function portalPrint(idx) {
+  const r  = portalRecords[idx];
+  if (!r) return;
+  // Build a step1Data and step2Data from the single record
+  const d1 = { ...r };
+  const d2 = { ...r };
+  fillReceipt(d1, d2);
+  setTimeout(() => window.print(), 150);
+}
+
+/* ── Auto-refresh prescription badge on role screen ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const q = prescGet();
+  const el = document.querySelector('.presc-badge-count');
+  if (el) el.textContent = q.length;
+});
+</script>
+</body>
+</html>

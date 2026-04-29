@@ -677,12 +677,17 @@
           <hr class="divider">
           <div class="field" style="margin-bottom:1.25rem">
             <label>Job Nature <span class="req">*</span></label>
-            <div class="radio-group">
-              <label class="radio-pill"><input type="radio" name="job_nature" value="Sitting" required><span>Sitting job</span></label>
-              <label class="radio-pill"><input type="radio" name="job_nature" value="Standing"><span>Standing job</span></label>
-              <label class="radio-pill"><input type="radio" name="job_nature" value="Loading/Physical"><span>Loading / Physical</span></label>
-              <label class="radio-pill"><input type="radio" name="job_nature" value="Mixed"><span>Mixed</span></label>
-            </div>
+           
+          <div class="check-grid">
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Sitting" required><span>Sitting job</span></label>
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Standing"><span>Standing job</span></label>
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Loading/Physical"><span>Loading / Physical</span></label>
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Mixed"><span>Mixed</span></label>
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Day Shift"><span>Day Shift</span></label>
+            <label class="check-item"><input type="checkbox" name="job_nature" value="Night Shift"><span>Night Shift</span></label>
+            <label class="check-item"><input type="checkbox" name="job_Nature" value="Rotation Shift"><span>Rotation Shift</span></label>
+          </div>
+           
           </div>
           <div class="field">
             <label>Job / Work Area <span class="req">*</span></label>
@@ -693,8 +698,10 @@
               <label class="check-item"><input type="checkbox" name="job_area" value="Cutting"><span>Cutting</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Sewing / Stitching"><span>Sewing / Stitching</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Finishing"><span>Finishing</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Packing"><span>Packing</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Washing"><span>Washing</span></label>
-              <label class="check-item"><input type="checkbox" name="job_area" value="Maintenance"><span>Maintenance</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Mechanical"><span>Mechanical</span></label>
+              <label class="check-item"><input type="checkbox" name="job_area" value="Utility & Maintenance"><span>Utlity & Maintenance</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Warehouse / Store"><span>Warehouse / Store</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Admin / HR / Office"><span>Admin / HR / Office</span></label>
               <label class="check-item"><input type="checkbox" name="job_area" value="Other"><span>Other</span></label>
